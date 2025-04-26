@@ -18,3 +18,6 @@ ignition/deployments/chain-31337
 
 # Generated input files
 /input
+
+# Ignition files
+/ignition

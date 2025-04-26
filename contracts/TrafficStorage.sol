@@ -1,14 +1,34 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.19;
 
 contract TrafficStorage {
-    string public ipfsCID; // Solo guardaremos 1 CID para la demo
 
-    function storeCID(string memory _cid) public {
-        ipfsCID = _cid;
+    enum DataType { Data, Optimization }
+
+    // Mapping: traffic_light_id => timestamp => DataType => CID
+    mapping(string => mapping(uint256 => mapping(DataType => string))) private records;
+
+    event RecordStored(string trafficLightId, uint256 timestamp, DataType dataType, string cid);
+
+    /// @notice Store a new traffic or optimization record
+    function storeRecord(
+        string calldata trafficLightId,
+        uint256 timestamp,
+        DataType dataType,
+        string calldata cid
+    ) external {
+        records[trafficLightId][timestamp][dataType] = cid;
+        emit RecordStored(trafficLightId, timestamp, dataType, cid);
     }
 
-    function getCID() public view returns (string memory) {
-        return ipfsCID;
+    /// @notice Retrieve a record by traffic light, timestamp, and type
+    function getRecord(
+        string calldata trafficLightId,
+        uint256 timestamp,
+        DataType dataType
+    ) external view returns (string memory) {
+        string memory cid = records[trafficLightId][timestamp][dataType];
+        require(bytes(cid).length > 0, "Record not found");
+        return cid;
     }
 }

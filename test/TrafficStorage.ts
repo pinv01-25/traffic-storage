@@ -1,24 +1,44 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
 import { ethers } from "hardhat";
+import { expect } from "chai";
+import { TrafficStorage } from "../typechain-types";
 
 describe("TrafficStorage", function () {
-  async function deployContract() {
-    const TrafficStorage = await ethers.getContractFactory("TrafficStorage");
-    const trafficStorage = await TrafficStorage.deploy();
-    await trafficStorage.waitForDeployment();
-    return { trafficStorage };
-  }
+  let trafficStorage: TrafficStorage;
 
-  it("Should store and retrieve a CID correctly", async () => {
-    const { trafficStorage } = await loadFixture(deployContract);
-    const testCID = "QmXoypizjW3WknFiJnKLwHChL72vedxjQkDDPJmXMo6uco";
-    await trafficStorage.storeCID(testCID);
-    expect(await trafficStorage.getCID()).to.equal(testCID);
+  beforeEach(async () => {
+    const TrafficStorageFactory = await ethers.getContractFactory(
+      "TrafficStorage"
+    );
+    trafficStorage = (await TrafficStorageFactory.deploy()) as TrafficStorage;
   });
 
-  it("Should return empty string if no CID is stored", async () => {
-    const { trafficStorage } = await loadFixture(deployContract); // Contrato fresco
-    expect(await trafficStorage.getCID()).to.equal("");
+  it("should store and retrieve a record correctly", async function () {
+    const trafficLightId = "TL_21";
+    const timestamp = Math.floor(Date.now() / 1000);
+    const cid = "QmTestCid123";
+    const dataType = 0; // DataType.Data (enum 0)
+
+    // Store the record
+    const tx = await trafficStorage.storeRecord(
+      trafficLightId,
+      timestamp,
+      dataType,
+      cid
+    );
+    await tx.wait();
+
+    // Retrieve the record
+    const storedCid = await trafficStorage.getRecord(
+      trafficLightId,
+      timestamp,
+      dataType
+    );
+    expect(storedCid).to.equal(cid);
+  });
+
+  it("should revert when trying to retrieve a non-existent record", async function () {
+    await expect(
+      trafficStorage.getRecord("NonexistentTL", 0, 0)
+    ).to.be.revertedWith("Record not found");
   });
 });
