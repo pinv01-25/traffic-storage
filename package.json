@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:services": "concurrently \"ipfs daemon\" \"cd contracts && npx hardhat node\"",
+    "test:api": "cd api && pytest tests/",
+    "test:full": "concurrently -k -s first -n \"IPFS,HARDHAT,TESTS\" -c \"cyan,yellow,green\" \"ipfs daemon\" \"cd contracts && npx hardhat node\" \"sleep 5 && cd api && pytest tests/\""
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +14,7 @@
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomiclabs/hardhat-ethers": "npm:@nomicfoundation/hardhat-ethers@^3.0.8",
+    "concurrently": "^9.1.2",
     "ethers": "^6.13.5",
     "hardhat": "^2.23.0"
   },

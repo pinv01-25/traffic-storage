@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from api.modules.ipfs.ipfs_manager import upload_json_to_ipfs, download_json_from_ipfs
 from api.modules.blockdag.blockdag_client import store_metadata_in_blockdag, fetch_metadata_from_blockdag
-from api.schemas.traffic_data import TrafficData
-from api.schemas.optimization_data import OptimizationData
+from api.schemas.data_schema import TrafficData
+from api.schemas.optimization_schema import OptimizationData
 from pydantic import BaseModel
 
 app = FastAPI(title="Traffic Storage API", version="1.0")

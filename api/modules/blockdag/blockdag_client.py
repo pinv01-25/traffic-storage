@@ -4,7 +4,8 @@ from web3 import Web3
 w3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
 
 # Load contract
-contract_address = "0xC3d520EBE9A9F52FC5E1519f17F5a9A01d8ac68f"
+# contract_address = "0xC3d520EBE9A9F52FC5E1519f17F5a9A01d8ac68f"
+contract_address = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 contract_abi = [{
         "anonymous": False,
         "inputs": [
@@ -65,6 +66,10 @@ async def fetch_metadata_from_blockdag(
     timestamp: int, 
     data_type: int
 ) -> str:
+    # Debugging print statement
+    print(f"Calling getRecord with traffic_light_id={traffic_light_id}, timestamp={timestamp}, data_type_enum={data_type}")
+    
+    # Call the smart contract function
     cid = contract.functions.getRecord(
         traffic_light_id,
         timestamp,
