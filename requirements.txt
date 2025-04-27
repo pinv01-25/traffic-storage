@@ -41,6 +41,7 @@ pydantic==2.11.3
 pydantic_core==2.33.1
 pytest==8.3.5
 pytest-asyncio==0.26.0
+python-dotenv==1.1.0
 pyunormalize==16.0.0
 referencing==0.36.2
 regex==2024.11.6

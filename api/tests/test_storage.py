@@ -14,7 +14,6 @@ async def test_upload_valid_data():
     """Subir un JSON válido debería funcionar sin errores"""
     valid_file = os.path.join(VALID_FOLDER, "valid_data.json")
 
-    # Cargar el contenido del JSON
     with open(valid_file, "r") as f:
         payload = json.load(f)
 
@@ -43,7 +42,6 @@ async def test_download_valid_data():
     timestamp = convert_to_unix_timestamp(payload["timestamp"])
     data_type = 0 if payload["type"] == "data" else 1
 
-    # Ahora usamos los valores correctos
     data = await download_and_verify(traffic_light_id, timestamp, data_type)
 
     assert data is not None
