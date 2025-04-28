@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "type": "data",
+  "timestamp": "2025-04-27 21:54:37-03",
+  "traffic_light_id": "TL_12",
+  "controlled_edges": ["edge43", "edge15"],
+  "metrics": {
+    "vehicles_per_minute": 34,
+    "avg_speed_kmh": 34.9,
+    "avg_circulation_time_sec": 31,
+    "density": 0.21
+  },
+  "vehicle_stats": {
+    "motorcycle": 18,
+    "car": 51,
+    "bus": 4,
+    "truck": 8
+  }
+}

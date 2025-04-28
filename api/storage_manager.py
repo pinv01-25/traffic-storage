@@ -1,4 +1,4 @@
-from api.validator import validate_payload
+from api.scripts.validator import validate_payload
 from api.modules.ipfs.ipfs_manager import upload_json_to_ipfs, download_json_from_ipfs
 from api.modules.blockdag.blockdag_client import store_metadata_in_blockdag, fetch_metadata_from_blockdag
 from datetime import datetime

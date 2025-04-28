@@ -5,7 +5,7 @@ import asyncio
 from storage_manager import upload_and_register, download_and_verify, convert_to_unix_timestamp
 
 # Ruta de los archivos de prueba
-INPUT_FOLDER = os.path.join(os.path.dirname(__file__), "../input")
+INPUT_FOLDER = os.path.join(os.path.dirname(__file__), "input")
 VALID_FOLDER = os.path.join(INPUT_FOLDER, "valid_data")
 INVALID_FOLDER = os.path.join(INPUT_FOLDER, "invalid_data")
 
