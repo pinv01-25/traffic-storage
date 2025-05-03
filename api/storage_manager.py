@@ -9,9 +9,10 @@ TYPE_TO_ENUM = {
 }
 
 def convert_to_unix_timestamp(timestamp_str: str) -> int:
-    # Si tus timestamps tienen el timezone como "-03" debes manejarlo.
-    # Aquí simplificamos ignorando el timezone.
-    ts = datetime.fromisoformat(timestamp_str.replace("-03", ""))
+    # Manejar timestamps con timezone "-03" correctamente.
+    if timestamp_str.endswith("-03"):
+        timestamp_str = timestamp_str[:-3]  # Eliminar solo el timezone al final.
+    ts = datetime.fromisoformat(timestamp_str)
     return int(ts.timestamp())
 
 async def upload_and_register(payload: dict):
