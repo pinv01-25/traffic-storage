@@ -36,3 +36,4 @@ node_modules
 .pytest_cache
 
 /api/scripts/__pycache__
+/api/models/__pycache__

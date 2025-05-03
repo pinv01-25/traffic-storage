@@ -18,7 +18,7 @@ def convert_to_unix_timestamp(timestamp_str: str) -> int:
 async def upload_and_register(payload: dict):
     # Validar con Pydantic
     validate_payload(payload)
-
+                                                                                                                                                                                                                                                                                        
     payload_type = payload["type"].lower()
     if payload_type not in TYPE_TO_ENUM:
         raise ValueError(f"Unknown type {payload_type}")

@@ -1,9 +1,14 @@
+from datetime import datetime
 from fastapi import FastAPI, HTTPException, Body, Query
 from pydantic import BaseModel
 from typing import  Literal
 import os
 import glob
 import json
+from api.database import database
+from api.models.metadata_index import metadata_index
+from sqlalchemy import insert, select
+from fastapi import Request
 from api.modules.ipfs.ipfs_manager import upload_json_to_ipfs, download_json_from_ipfs
 from api.modules.blockdag.blockdag_client import store_metadata_in_blockdag, fetch_metadata_from_blockdag
 from api.storage_manager import convert_to_unix_timestamp
@@ -65,6 +70,14 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
             data_type=data_type,
             cid=cid
         )
+
+        # Insert metadata into the database
+        query = insert(metadata_index).values({
+            "type": metadata.type,
+            "timestamp": datetime.fromisoformat(metadata.timestamp),
+            "traffic_light_id": metadata.traffic_light_id
+        })
+        await database.execute(query)
 
         return {"message": "Metadata uploaded successfully", "cid": cid}
 
@@ -128,11 +141,26 @@ async def upload_generated_pairs(num_pairs: int):
                 data_type=data_type,
                 cid=cid
             )
-
+            
             uploaded.append({
                 "file": os.path.basename(filepath),
-                "cid": cid
+                "cid": cid,
+                "type": metadata["type"],
+                "timestamp": datetime.fromisoformat(metadata["timestamp"]),
+                "traffic_light_id": metadata["traffic_light_id"]
             })
+
+
+        # Insert metadata into the database
+        query = insert(metadata_index).values([
+            {
+                "type": metadata["type"],
+                "timestamp": metadata["timestamp"],
+                "traffic_light_id": metadata["traffic_light_id"]
+            } for metadata in uploaded
+        ])
+        await database.execute(query)
+
 
         return {
             "message": f"Successfully uploaded {len(uploaded)} JSONs (data+optimization pairs).",
@@ -141,3 +169,11 @@ async def upload_generated_pairs(num_pairs: int):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
