@@ -5,10 +5,8 @@ from web3 import Web3
 import os
 import asyncio
 
-# Connect to BlockDAG testnet
 w3 = Web3(Web3.HTTPProvider('https://rpc.primordial.bdagscan.com'))
 
-# Cargar configuración desde variables de entorno
 RPC_URL = os.getenv("RPC_URL", "https://rpc.primordial.bdagscan.com")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 account = w3.eth.account.from_key(PRIVATE_KEY)
@@ -103,7 +101,7 @@ async def store_metadata_in_blockdag(
                 print(f"[Attempt {attempt+1}] Retrying with higher gas price...")
                 await asyncio.sleep(2)
                 continue
-            raise  # Raise unhandled errors
+            raise
 
     raise RuntimeError("Failed to send transaction after retries.")
 
@@ -112,10 +110,7 @@ async def fetch_metadata_from_blockdag(
     timestamp: int, 
     data_type: int
 ) -> str:
-    # Debugging print statement
-    print(f"Calling getRecord with traffic_light_id={traffic_light_id}, timestamp={timestamp}, data_type_enum={data_type}")
     
-    # Call the smart contract function
     cid = contract.functions.getRecord(
         traffic_light_id,
         timestamp,

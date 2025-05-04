@@ -45,6 +45,11 @@ class OptimizationMetadata(BaseModel):
     optimization: dict
     impact: dict
 
+class DownloadRequest(BaseModel):
+    traffic_light_id: str
+    timestamp: str
+    type: Literal["data", "optimization"]
+
 UploadModel = TrafficDataMetadata | OptimizationMetadata
 
 # --- Endpoints ---
@@ -84,32 +89,33 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/download")
-async def download_metadata(
-    traffic_light_id: str = Query(...),
-    timestamp: str = Query(...),
-    type: Literal["data", "optimization"] = Query(...)
-):
+@app.post("/download")
+async def download_metadata(body: DownloadRequest):
     try:
-        # Map type and timestamp
-        data_type = DATA_TYPE_MAP[type]
-        timestamp_unix = convert_to_unix_timestamp(timestamp)
+        query = select(metadata_index).where(
+            metadata_index.c.traffic_light_id == body.traffic_light_id,
+            metadata_index.c.timestamp == body.timestamp,
+            metadata_index.c.type == body.type
+        )
+        record = await database.fetch_one(query)
+        if not record:
+            raise HTTPException(status_code=404, detail="No metadata found in index.")
 
-        # Fetch CID from BlockDAG
+        timestamp_unix = convert_to_unix_timestamp(body.timestamp)
+
         cid = await fetch_metadata_from_blockdag(
-            traffic_light_id=traffic_light_id,
+            traffic_light_id=body.traffic_light_id,
             timestamp=timestamp_unix,
-            data_type=data_type
+            data_type=DATA_TYPE_MAP[body.type]
         )
 
-        # Download JSON from IPFS
         data = await download_json_from_ipfs(cid)
-
         return data
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+    
+    
 @app.post("/upload/{num_pairs}")
 async def upload_generated_pairs(num_pairs: int):
     if num_pairs <= 0:
