@@ -5,15 +5,11 @@ from typing import  Literal
 import os
 import glob
 import json
-from api.database import database
-from api.models.metadata_index import metadata_index
 from sqlalchemy import insert, select
 from fastapi import Request
 from api.modules.ipfs.ipfs_manager import upload_json_to_ipfs, download_json_from_ipfs
 from api.modules.blockdag.blockdag_client import store_metadata_in_blockdag, fetch_metadata_from_blockdag
-from api.storage_manager import convert_to_unix_timestamp
 from api.scripts.generate_jsons import generate_jsons
-from api.scripts.validator import validate_payload
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 input_dir = os.path.join(BASE_DIR, "input")
@@ -31,7 +27,7 @@ app = FastAPI(title="Traffic Storage API", version="2.0")
 class TrafficDataMetadata(BaseModel):
     version: str = "1.0"
     type: Literal["data"]
-    timestamp: str
+    timestamp: int
     traffic_light_id: str
     controlled_edges: list[str]
     metrics: dict
@@ -40,14 +36,14 @@ class TrafficDataMetadata(BaseModel):
 class OptimizationMetadata(BaseModel):
     version: str = "1.0"
     type: Literal["optimization"]
-    timestamp: str
+    timestamp: int
     traffic_light_id: str
     optimization: dict
     impact: dict
 
 class DownloadRequest(BaseModel):
     traffic_light_id: str
-    timestamp: str
+    timestamp: int
     type: Literal["data", "optimization"]
 
 UploadModel = TrafficDataMetadata | OptimizationMetadata
@@ -66,25 +62,22 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
 
         # Map type and timestamp
         data_type = DATA_TYPE_MAP[metadata.type]
-        timestamp_unix = convert_to_unix_timestamp(metadata.timestamp)
 
         # Store reference in BlockDAG
         await store_metadata_in_blockdag(
             traffic_light_id=metadata.traffic_light_id,
-            timestamp=timestamp_unix,
+            timestamp=metadata.timestamp,
             data_type=data_type,
             cid=cid
         )
 
-        # Insert metadata into the database
-        query = insert(metadata_index).values({
+        return {
+            "message": "Metadata uploaded successfully",
+            "cid": cid,
             "type": metadata.type,
-            "timestamp": datetime.fromisoformat(metadata.timestamp),
+            "timestamp": metadata.timestamp,
             "traffic_light_id": metadata.traffic_light_id
-        })
-        await database.execute(query)
-
-        return {"message": "Metadata uploaded successfully", "cid": cid}
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -92,20 +85,9 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
 @app.post("/download")
 async def download_metadata(body: DownloadRequest):
     try:
-        query = select(metadata_index).where(
-            metadata_index.c.traffic_light_id == body.traffic_light_id,
-            metadata_index.c.timestamp == body.timestamp,
-            metadata_index.c.type == body.type
-        )
-        record = await database.fetch_one(query)
-        if not record:
-            raise HTTPException(status_code=404, detail="No metadata found in index.")
-
-        timestamp_unix = convert_to_unix_timestamp(body.timestamp)
-
         cid = await fetch_metadata_from_blockdag(
             traffic_light_id=body.traffic_light_id,
-            timestamp=timestamp_unix,
+            timestamp=body.timestamp,
             data_type=DATA_TYPE_MAP[body.type]
         )
 
@@ -135,16 +117,11 @@ async def upload_generated_pairs(num_pairs: int):
             # Upload JSON to IPFS
             cid = await upload_json_to_ipfs(metadata)
 
-            # Map type and timestamp
-            data_type = DATA_TYPE_MAP[metadata["type"]]
-            timestamp_unix = convert_to_unix_timestamp(metadata["timestamp"])
-            traffic_light_id = metadata["traffic_light_id"]
-
             # Store metadata in BlockDAG
             await store_metadata_in_blockdag(
-                traffic_light_id=traffic_light_id,
-                timestamp=timestamp_unix,
-                data_type=data_type,
+                traffic_light_id=metadata["traffic_light_id"],
+                timestamp=metadata["timestamp"],
+                data_type=DATA_TYPE_MAP[metadata["type"]],
                 cid=cid
             )
             
@@ -156,18 +133,6 @@ async def upload_generated_pairs(num_pairs: int):
                 "traffic_light_id": metadata["traffic_light_id"]
             })
 
-
-        # Insert metadata into the database
-        query = insert(metadata_index).values([
-            {
-                "type": metadata["type"],
-                "timestamp": metadata["timestamp"],
-                "traffic_light_id": metadata["traffic_light_id"]
-            } for metadata in uploaded
-        ])
-        await database.execute(query)
-
-
         return {
             "message": f"Successfully uploaded {len(uploaded)} JSONs (data+optimization pairs).",
             "uploads": uploaded
@@ -175,11 +140,3 @@ async def upload_generated_pairs(num_pairs: int):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
