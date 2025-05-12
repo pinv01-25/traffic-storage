@@ -67,10 +67,8 @@ async def get_fresh_nonce():
     """Obtiene un nonce actualizado directamente de la blockchain"""
     try:
         nonce = w3.eth.get_transaction_count(SENDER_ADDRESS, "pending")
-        print(f"[DEBUG] Fresh nonce fetched: {nonce}")
         return nonce
     except Exception as e:
-        print(f"[ERROR] Error fetching nonce: {e}")
         # Esperar un poco y reintentar
         await asyncio.sleep(2)
         return w3.eth.get_transaction_count(SENDER_ADDRESS, "pending")
@@ -88,8 +86,7 @@ async def calculate_optimal_gas_price(attempt=0):
         randomness = 1.0 + (random.random() * 0.1)  # Entre 1.0 y 1.1
         
         gas_price = int(base_gas_price * multiplier * randomness)
-        print(f"[DEBUG] Base gas price: {base_gas_price}")
-        print(f"[DEBUG] Calculated gas price: {gas_price} (multiplier: {multiplier})")
+
         return gas_price
     except Exception as e:
         print(f"[ERROR] Error calculating gas price: {e}")
@@ -152,8 +149,6 @@ async def store_metadata_in_blockdag(
                 "chainId": CHAIN_ID
             })
             
-            print(f"[DEBUG] Built transaction: {tx}")
-            
             # Simular la transacción antes de enviarla
             try:
                 w3.eth.call({
@@ -161,7 +156,6 @@ async def store_metadata_in_blockdag(
                     "data": tx["data"],
                     "from": SENDER_ADDRESS
                 }, "pending")
-                print("[DEBUG] Transaction simulation succeeded")
             except Exception as call_error:
                 print(f"[ERROR] Transaction simulation failed: {call_error}")
                 raise RuntimeError(f"The transaction would probably fail: {call_error}")
@@ -169,7 +163,6 @@ async def store_metadata_in_blockdag(
             # Firmar y enviar la transacción
             signed_tx = w3.eth.account.sign_transaction(tx, PRIVATE_KEY)
             tx_hash_hex = signed_tx.hash.hex()
-            print(f"[DEBUG] Signed transaction: {tx_hash_hex}")
             
             tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             print(f"[INFO] Transaction sent: {tx_hash.hex()}")
