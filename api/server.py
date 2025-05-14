@@ -10,6 +10,15 @@ from fastapi import Request
 from api.modules.ipfs.ipfs_manager import upload_json_to_ipfs, download_json_from_ipfs
 from api.modules.blockdag.blockdag_client import store_metadata_in_blockdag, fetch_metadata_from_blockdag
 from api.scripts.generate_jsons import generate_jsons
+import logging
+
+# --- Logging configuration ---
+logging.basicConfig(
+    level=logging.INFO,  # Cambia a DEBUG si necesitas más detalle
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+)
+logger = logging.getLogger("traffic_api")
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 input_dir = os.path.join(BASE_DIR, "input")
@@ -71,6 +80,8 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
             cid=cid
         )
 
+        logger.info(f"Uploaded metadata for traffic_light_id={metadata.traffic_light_id}, timestamp={metadata.timestamp}, cid={cid}")
+
         return {
             "message": "Metadata uploaded successfully",
             "cid": cid,
@@ -80,6 +91,7 @@ async def upload_metadata(metadata: UploadModel = Body(...)):
         }
 
     except Exception as e:
+        logger.exception("Error uploading metadata")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/download")
