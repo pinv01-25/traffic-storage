@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # Parameters
 BASE_TIMESTAMP = datetime.now()  # Starting point
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'input')
+OUTPUT_DIR = "/tmp/api/input" if os.getenv('VERCEL_ENV') == 'production' else os.path.join(os.path.dirname(os.path.dirname(__file__)), 'input')
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
