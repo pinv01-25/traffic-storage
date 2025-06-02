@@ -67,7 +67,7 @@ async def healthcheck():
 async def upload_metadata(metadata: UploadModel = Body(...)):
     try:
         # Upload JSON to IPFS
-        cid = await upload_json_to_ipfs(metadata.dict())
+        cid = upload_json_to_ipfs(metadata.dict())
 
         # Map type and timestamp
         data_type = DATA_TYPE_MAP[metadata.type]
@@ -103,7 +103,7 @@ async def download_metadata(body: DownloadRequest):
             data_type=DATA_TYPE_MAP[body.type]
         )
 
-        data = await download_json_from_ipfs(cid)
+        data = download_json_from_ipfs(cid)
         return data
 
     except Exception as e:

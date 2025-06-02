@@ -1,51 +1,33 @@
-import subprocess
-import json
-import asyncio
+import os
+import requests
 
-IPFS_API_URL = "http://127.0.0.1:5001/api/v0/version"
+PINATA_JWT = os.getenv("PINATA_JWT")
+PINATA_URL = os.getenv("PINATA_URL")
 
-# --- Funciones internas ---
+if not PINATA_JWT:
+    raise RuntimeError("Missing PINATA_JWT in environment")
+if not PINATA_URL:
+    raise RuntimeError("Missing PINATA_URL in environment")
 
-def run_ipfs_command(args):
-    try:
-        result = subprocess.run([
-            "/usr/local/bin/ipfs", *args
-        ], capture_output=True, text=True, check=True)
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"IPFS command failed: {e.stderr}")
+def upload_json_to_ipfs(data: dict) -> str:
+    headers = {
+        "Authorization": f"Bearer {PINATA_JWT}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "pinataContent": data,
+        "pinataMetadata": { "name": "metadata.json" }
+    }
 
-# --- Funciones principales ---
-
-async def upload_json_to_ipfs(data: dict) -> str:
-    json_data = json.dumps(data)
-    proc = subprocess.Popen(
-        ["/usr/local/bin/ipfs", "add", "-q"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
+    response = requests.post(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        headers=headers,
+        json=payload
     )
-    stdout, stderr = proc.communicate(input=json_data)
-    if proc.returncode != 0:
-        raise RuntimeError(f"IPFS add failed: {stderr}")
-    cid = stdout.strip()
-    return cid
+    response.raise_for_status()
+    return response.json()["IpfsHash"]
 
-async def download_json_from_ipfs(cid: str) -> dict:
-    proc = subprocess.Popen(
-        ["/usr/local/bin/ipfs", "cat", cid],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        raise RuntimeError(f"IPFS cat failed: {stderr}")
-    data = json.loads(stdout)
-    return data
-
-# --- Limpieza (opcional) ---
-async def shutdown_ipfs():
-    # No necesitamos shutdown manual ahora, porque ipfs daemon es separado
-    pass
+def download_json_from_ipfs(cid: str) -> dict:
+    response = requests.get(f"{PINATA_URL}/{cid}")
+    response.raise_for_status()
+    return response.json()
