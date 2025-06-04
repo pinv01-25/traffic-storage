@@ -64,12 +64,17 @@ npm install
 ```
 ### Crear archivo de entorno
 ```
-cp .env.example .env
+cp env.example .env
 ```
 con contenido:
 ```
-BLOCKDAG_RPC_URL=https://rpc.primordial.bdagscan.com
-PRIVATE_KEY=0x... # (clave privada desde MetaMask o burner)
+# === PINATA IPFS CONFIGURATION ===
+PINATA_JWT=your_pinata_jwt_token_here
+PINATA_URL=https://your-gateway.mypinata.cloud
+
+# === BLOCKCHAIN CONFIGURATION ===
+RPC_URL=https://rpc.primordial.bdagscan.com
+PRIVATE_KEY=0x_your_private_key_here
 CHAIN_ID=1043
 ```
 

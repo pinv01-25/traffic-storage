@@ -28,6 +28,6 @@ def upload_json_to_ipfs(data: dict) -> str:
     return response.json()["IpfsHash"]
 
 def download_json_from_ipfs(cid: str) -> dict:
-    response = requests.get(f"{PINATA_URL}/{cid}")
+    response = requests.get(f"{PINATA_URL}/ipfs/{cid}")
     response.raise_for_status()
     return response.json()
