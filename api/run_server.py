@@ -14,7 +14,7 @@ from main import app
 from config.settings import settings
 from config.logging_config import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, service_name="traffic_storage")
 
 def main():
     """Main function to run the server."""

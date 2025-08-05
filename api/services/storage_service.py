@@ -7,7 +7,7 @@ from utils.validators import validate_data_payload
 from services.ipfs_service import IPFSService
 from services.blockdag_service import BlockDAGService
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, service_name="traffic_storage")
 
 class StorageService:
     """Main storage service that orchestrates IPFS and BlockDAG operations."""

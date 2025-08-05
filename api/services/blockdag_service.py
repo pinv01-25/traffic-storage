@@ -6,7 +6,7 @@ from config.settings import settings
 from config.logging_config import get_logger
 from utils.exceptions import BlockDAGError
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, service_name="traffic_storage")
 
 class BlockDAGService:
     """Service for interacting with BlockDAG blockchain."""

@@ -5,7 +5,7 @@ from config.settings import settings
 from config.logging_config import get_logger
 from utils.exceptions import IPFSError
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, service_name="traffic_storage")
 
 class IPFSService:
     """Service for interacting with IPFS via Pinata."""
@@ -15,6 +15,12 @@ class IPFSService:
         self.timeout = settings.IPFS_TIMEOUT
         self.pinata_jwt = settings.PINATA_JWT
         self.pinata_url = settings.PINATA_URL
+        
+        # Debug logging to check if PINATA_JWT is loaded
+        if self.pinata_jwt:
+            logger.debug(f"PINATA_JWT loaded successfully (length: {len(self.pinata_jwt)})")
+        else:
+            logger.warning("PINATA_JWT is None or empty")
     
     def upload_json(self, data: Dict[str, Any]) -> str:
         """
