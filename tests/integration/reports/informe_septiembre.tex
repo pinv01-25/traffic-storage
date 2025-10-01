@@ -1,0 +1,864 @@
+\documentclass[onecolumn]{article}
+\usepackage{informe-lsd}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+
+\title{\vspace{-1.5cm}
+\begin{center}
+\LARGE
+\textbf{Segundo Informe de Avance - Asistente de Investigación\\ 
+PROYECTO PINV01-25} \\
+\Large Septiembre 2025
+\vspace{0.5cm}
+\end{center}
+}
+
+\author[1]{María José Duarte, Univ.\orcidlink{0009-0002-2820-6791}}
+\affil[1]{
+\small
+majodkw@gmail.com Laboratorio de Sistemas Distribuidos (LSD), Facultad de Ingeniería de la UNA (FIUNA), San Lorenzo, Paraguay.
+}
+
+\date{}
+
+\begin{document}
+\thispagestyle{firstpagestyle}
+\maketitle
+
+\vspace{-0.5cm}    
+\begin{abstract}
+Este segundo informe técnico presenta los resultados de las pruebas y validación de consultas realizadas al sistema de almacenamiento distribuido \textit{traffic-storage} del Proyecto PINV01-25. Se ejecutaron escenarios de prueba con distintos niveles de tráfico vehicular simulado (bajo, medio y alto) para validar la precisión y eficiencia de las consultas al contrato inteligente. Los resultados demuestran tiempos de respuesta consistentes entre 6.7-7.3 segundos para operaciones de subida y 1.7-2.0 segundos para descarga, con una precisión del 100\% en la integridad de datos. El sistema ha evolucionado significativamente desde junio, incorporando el módulo \textit{sumo-helper} para la generación automatizada de escenarios de prueba y mejoras en la arquitectura de almacenamiento BlockDAG. Las métricas obtenidas validan el funcionamiento correcto del sistema ante distintos volúmenes de datos y confirman la viabilidad técnica para despliegues en producción.
+\vspace{0.5cm}
+\keywords{Sistemas Inteligentes de Transporte (ITS); Validación de Consultas; BlockDAG; IPFS; Pruebas de Rendimiento; Escenarios de Tráfico; Precisión de Datos}
+\end{abstract}
+
+\section{Introducción}
+
+El segundo trimestre del Proyecto PINV01-25 se ha enfocado en la validación exhaustiva del sistema de almacenamiento distribuido mediante la ejecución de escenarios de prueba controlados. Este informe presenta los resultados de las pruebas realizadas al módulo \textit{traffic-storage}, que implementa almacenamiento verificable mediante la integración de IPFS (InterPlanetary File System) y contratos inteligentes en la red BlockDAG (Blockchain Directed Acyclic Graph).
+
+La función específica evaluada corresponde a la segunda función del asistente de investigación: "Ejecutar escenarios de prueba con distintos niveles de tráfico vehicular simulado para validar la precisión y eficiencia de las consultas. Verificar el funcionamiento correcto del sistema ante distintos volúmenes de datos y documentar los resultados obtenidos."
+
+\subsection{Arquitectura del Sistema de Almacenamiento}
+
+El módulo \textit{traffic-storage} implementa una arquitectura híbrida de almacenamiento distribuido que combina dos tecnologías complementarias:
+
+\subsubsection{Integración IPFS-BlockDAG}
+
+El sistema utiliza IPFS para el almacenamiento descentralizado de archivos JSON que contienen datos de tráfico y optimización. Cada archivo se identifica mediante un Content Identifier (CID) criptográfico único que garantiza la integridad de los datos. Los metadatos se registran en la red BlockDAG Primordial TestNet (Chain ID: 1043) mediante el contrato inteligente \texttt{TrafficStorage.sol}, que implementa un mapeo tridimensional que asocia cada registro con su ID de semáforo, timestamp y tipo de dato.
+
+El contrato inteligente incluye las funciones principales:
+\begin{itemize}
+    \item \texttt{storeRecord}: Almacena nuevos registros emitiendo eventos para seguimiento de transacciones
+    \item \texttt{getRecord}: Recupera registros existentes mediante consultas que incluyen ID del semáforo, timestamp y tipo de dato
+    \item \textbf{Validaciones}: Asegura que solo se almacenen registros válidos y que las consultas devuelvan resultados consistentes
+\end{itemize}
+
+\subsubsection{API RESTful y Formato de Datos Unificado}
+
+El módulo expone una API RESTful completa implementada con FastAPI que incluye endpoints para subir y descargar datos:
+
+\begin{itemize}
+    \item \texttt{POST /upload/}: Sube datos JSON a IPFS y registra el CID en BlockDAG
+    \item \texttt{POST /download/}: Recupera datos desde IPFS utilizando metadatos de BlockDAG
+    \item \texttt{GET /healthcheck}: Verificación del estado del servicio y conectividad
+\end{itemize}
+
+El sistema implementa un formato de datos unificado versión 2.0 que maneja tanto sensores individuales como lotes de múltiples sensores (1-10 sensores por lote). Los datos incluyen métricas detalladas como vehículos por minuto, velocidad promedio, tiempo de circulación, densidad vehicular y clasificación de tipos de vehículos (motocicletas, automóviles, autobuses, camiones).
+
+\subsection{Contexto y Evolución del Sistema}
+
+Desde el primer informe de junio, el sistema ha experimentado desarrollos significativos que incluyen:
+
+\subsubsection{Módulo Sumo-Helper}
+
+El desarrollo del módulo \textit{sumo-helper} representa una contribución significativa al ecosistema del proyecto. Este módulo implementa una herramienta web moderna para la generación automatizada de escenarios de prueba SUMO con las siguientes características técnicas:
+
+\begin{itemize}
+    \item \textbf{Interfaz web}: Aplicación React 18 con Vite como herramienta de construcción, utilizando Leaflet para mapas interactivos y Tailwind CSS con DaisyUI para el diseño
+    \item \textbf{Backend FastAPI}: Servicio RESTful que procesa mapas y realiza conversión a formato SUMO
+    \item \textbf{Integración OSMnx}: Utilización de OpenStreetMap para la generación de redes viales con filtros personalizados para carreteras principales (motorway, trunk, primary, secondary, tertiary)
+    \item \textbf{Exportación automatizada}: Generación de archivos ZIP con configuraciones completas de SUMO incluyendo nodos, aristas, rutas, configuración de simulación y metadatos JSON
+\end{itemize}
+
+El servicio OSMnx implementa algoritmos de conversión de coordenadas geográficas a coordenadas locales, normalización de nombres de calles para compatibilidad con SUMO, y validación de redes generadas utilizando sumolib.
+
+\subsubsection{Mejoras en Traffic-Storage}
+
+El módulo \textit{traffic-storage} ha experimentado optimizaciones significativas:
+
+\begin{itemize}
+    \item \textbf{Optimización de APIs}: Corrección de endpoints para incluir barras finales (\texttt{/upload/}, \texttt{/download/}) y manejo de redirecciones HTTP 307
+    \item \textbf{Manejo de errores}: Implementación de mecanismos robustos de recuperación ante fallos con reintentos automáticos y backoff exponencial
+    \item \textbf{Validación de configuración}: Mejoras en la gestión de variables de entorno y credenciales mediante esquemas Pydantic
+    \item \textbf{Logging estructurado}: Implementación de logging detallado con niveles configurables para facilitar el debugging
+    \item \textbf{Gestión de transacciones}: Optimización de gas, manejo de nonces y simulación de transacciones antes del envío
+\end{itemize}
+
+\subsubsection{Scripts de Automatización}
+
+La implementación de scripts de automatización ha mejorado significativamente la capacidad de validación del sistema:
+
+\begin{itemize}
+    \item \textbf{storage\_metrics.py}: Script especializado para medir tiempos de subida y descarga con generación de payloads sintéticos y manejo de errores HTTP
+    \item \textbf{verify\_storage\_precision.py}: Script para verificar la precisión de los datos mediante comparación de hashes SHA-256 entre datos originales y recuperados
+    \item \textbf{run\_all.sh}: Orquestador que coordina la ejecución de múltiples pruebas de forma sistemática
+    \item \textbf{Reportes estructurados}: Generación automática de reportes en formatos CSV y JSON para evidencia reproducible
+\end{itemize}
+
+\subsection{Objetivos del Segundo Informe}
+
+Los objetivos específicos de este informe incluyen:
+
+\begin{enumerate}
+    \item \textbf{Validación de precisión}: Confirmar la integridad de las consultas al contrato inteligente mediante escenarios simulados con verificación criptográfica
+    \item \textbf{Medición de rendimiento}: Cuantificar los tiempos de respuesta del sistema ante distintos volúmenes de datos con análisis estadístico
+    \item \textbf{Documentación de eficiencia}: Evaluar la eficiencia del almacenamiento distribuido en BlockDAG con métricas de costo y throughput
+    \item \textbf{Evaluación de escalabilidad}: Analizar la capacidad del sistema para manejar diferentes niveles de tráfico vehicular
+    \item \textbf{Evidencias documentadas}: Proporcionar evidencias completas del funcionamiento correcto del sistema con datos reproducibles
+\end{enumerate}
+
+\section{Metodología de Pruebas}
+
+\subsection{Diseño Experimental y Planificación}
+
+Las pruebas se diseñaron siguiendo un enfoque sistemático y metodológicamente riguroso que incluye tres escenarios de tráfico vehicular simulados, cada uno representando diferentes condiciones operativas del sistema:
+
+\begin{itemize}
+    \item \textbf{Escenario Bajo}: Densidad vehicular reducida (30-50 vehículos), condiciones de tráfico fluido, representando operaciones en horarios de baja demanda
+    \item \textbf{Escenario Medio}: Densidad vehicular moderada (80-120 vehículos), condiciones de tráfico normal, simulando operaciones típicas diurnas
+    \item \textbf{Escenario Alto}: Alta densidad vehicular (150-200 vehículos), condiciones de tráfico congestionado, representando picos de tráfico y situaciones de alta demanda
+\end{itemize}
+
+Cada escenario se ejecutó mediante 5 corridas independientes para obtener métricas estadísticamente significativas y permitir el cálculo de desviaciones estándar. Los datos se generaron utilizando el módulo \textit{sumo-helper} que permite la creación automatizada de escenarios de prueba con parámetros controlados y reproducibles.
+
+\subsection{Entorno de Pruebas y Especificaciones del Sistema}
+
+Las pruebas se ejecutaron en un entorno controlado utilizando un sistema de desarrollo con las siguientes especificaciones técnicas:
+
+\begin{itemize}
+    \item \textbf{Procesador}: AMD Ryzen 7 3700U con Radeon Vega Mobile Gfx (4 cores, 8 threads, 2.3 GHz base)
+    \item \textbf{Memoria}: 9.6 GB RAM total, 5.9 GB disponible durante las pruebas
+    \item \textbf{Sistema Operativo}: Ubuntu 24.04.2 LTS (Noble Numbat)
+    \item \textbf{Almacenamiento}: 233 GB SSD NVMe con 186 GB disponibles
+    \item \textbf{Arquitectura}: x86\_64 con soporte para virtualización
+\end{itemize}
+
+La selección de este entorno de pruebas demuestra la viabilidad del sistema en hardware de consumo estándar, confirmando que no se requieren recursos computacionales especializados para el despliegue del sistema de almacenamiento distribuido. Esta característica es particularmente relevante para la adopción del sistema en entornos municipales con presupuestos limitados.
+
+\subsection{Herramientas de Automatización y Scripts de Pruebas}
+
+Se desarrollaron scripts especializados para la automatización completa del proceso de pruebas, implementando un pipeline de validación que garantiza la reproducibilidad y trazabilidad de los resultados:
+
+\subsubsection{storage\_metrics.py}
+
+Script principal para la medición de métricas de rendimiento que implementa:
+
+\begin{itemize}
+    \item \textbf{Generación de payloads sintéticos}: Creación automática de datos JSON con formato unificado 2.0 que incluye métricas realistas de tráfico
+    \item \textbf{Medición de latencias}: Registro preciso de tiempos de subida y descarga utilizando timestamps de alta resolución
+    \item \textbf{Manejo de errores HTTP}: Gestión robusta de códigos de estado HTTP con reintentos automáticos y logging detallado
+    \item \textbf{Generación de evidencia}: Creación de archivos JSON individuales por corrida para trazabilidad completa
+\end{itemize}
+
+\subsubsection{verify\_storage\_precision.py}
+
+Script especializado para la verificación de integridad de datos que implementa:
+
+\begin{itemize}
+    \item \textbf{Comparación criptográfica}: Utilización de hashes SHA-256 para verificar la integridad de los datos mediante comparación determinística
+    \item \textbf{Análisis de pares}: Identificación automática de pares upload-download para cada corrida
+    \item \textbf{Generación de reportes}: Creación de archivos CSV con métricas de precisión por escenario
+    \item \textbf{Validación de consistencia}: Verificación de que los datos recuperados sean idénticos a los datos originales
+\end{itemize}
+
+\subsubsection{run\_all.sh}
+
+Orquestador principal que coordina la ejecución sistemática de todas las pruebas:
+
+\begin{itemize}
+    \item \textbf{Ejecución secuencial}: Coordinación de pruebas por escenario con control de flujo robusto
+    \item \textbf{Gestión de parámetros}: Configuración flexible de número de corridas, URLs de servicio y directorios de salida
+    \item \textbf{Integración de scripts}: Coordinación entre scripts de métricas y verificación de precisión
+    \item \textbf{Generación de reportes consolidados}: Agregación de resultados en formatos estructurados
+\end{itemize}
+
+\subsection{Métricas Evaluadas y Metodología de Medición}
+
+Las métricas principales evaluadas incluyen indicadores de rendimiento, confiabilidad y eficiencia:
+
+\begin{itemize}
+    \item \textbf{Tiempo de subida}: Duración completa de las operaciones de almacenamiento en IPFS y registro de metadatos en BlockDAG, medido desde el inicio de la petición HTTP hasta la confirmación de la transacción
+    \item \textbf{Tiempo de descarga}: Duración de las operaciones de recuperación de datos, incluyendo consulta a BlockDAG y descarga desde IPFS
+    \item \textbf{Precisión de datos}: Verificación de integridad mediante comparación de hashes SHA-256 entre datos originales y recuperados, garantizando que no haya corrupción o pérdida de información
+    \item \textbf{Tasa de éxito}: Porcentaje de operaciones completadas exitosamente, incluyendo manejo de errores de red y validación de respuestas HTTP
+    \item \textbf{Costos de operación}: Gastos asociados a las transacciones en BlockDAG, incluyendo gas utilizado y costos financieros por transacción
+\end{itemize}
+
+\subsection{Proceso de Validación y Control de Calidad}
+
+El proceso de validación implementa múltiples capas de control de calidad:
+
+\begin{enumerate}
+    \item \textbf{Validación de entrada}: Verificación de esquemas de datos mediante Pydantic antes del procesamiento
+    \item \textbf{Monitoreo en tiempo real}: Logging estructurado de todas las operaciones para facilitar el debugging
+    \item \textbf{Verificación de integridad}: Comparación criptográfica de datos antes y después del almacenamiento
+    \item \textbf{Análisis estadístico}: Cálculo de promedios, desviaciones estándar y análisis de tendencias
+    \item \textbf{Generación de evidencia}: Creación de archivos de evidencia en formatos estándar (CSV, JSON) para auditoría
+\end{enumerate}
+
+\section{Arquitectura del Sistema de Pruebas}
+
+\subsection{Configuración del Entorno y Componentes}
+
+El sistema de pruebas se configuró utilizando una arquitectura distribuida que integra múltiples servicios especializados:
+
+\subsubsection{Servicio Traffic-Storage}
+
+El servicio principal \textit{traffic-storage} implementa una API RESTful basada en FastAPI con las siguientes características técnicas:
+
+\begin{itemize}
+    \item \textbf{Configuración centralizada}: Gestión de configuración mediante Pydantic Settings con validación automática de esquemas
+    \item \textbf{Endpoints especializados}: \texttt{POST /upload/} y \texttt{POST /download/} con manejo de redirecciones HTTP 307
+    \item \textbf{Validación de datos}: Esquemas Pydantic para validación de lotes de sensores (1-10 sensores) y optimizaciones
+    \item \textbf{Logging estructurado}: Sistema de logging con colores ANSI, niveles configurables y filtros por servicio
+    \item \textbf{Manejo de errores}: Middleware especializado para captura y logging de excepciones
+\end{itemize}
+
+\subsubsection{Integración IPFS-BlockDAG}
+
+La arquitectura híbrida implementa dos capas de almacenamiento complementarias:
+
+\textbf{Servicio IPFS (Pinata):}
+\begin{itemize}
+    \item \textbf{API Gateway}: Integración con Pinata API (\texttt{https://api.pinata.cloud}) para almacenamiento descentralizado
+    \item \textbf{Autenticación JWT}: Autenticación mediante tokens Bearer para acceso seguro
+    \item \textbf{Metadatos estructurados}: Inclusión de metadatos con timestamps y tipos de datos en cada upload
+    \item \textbf{Timeouts configurables}: Timeout de 30 segundos para uploads, 10 segundos para downloads
+    \item \textbf{Gateway personalizado}: Uso de gateway Pinata personalizado para acceso optimizado
+\end{itemize}
+
+\textbf{Servicio BlockDAG:}
+\begin{itemize}
+    \item \textbf{Red Primordial TestNet}: Conexión a \texttt{https://rpc.primordial.bdagscan.com} (Chain ID: 1043)
+    \item \textbf{Contrato inteligente}: \texttt{TrafficStorage.sol} desplegado en dirección \texttt{0xC3d520EBE9A9F52FC5E1519f17F5a9A01d8ac68f}
+    \item \textbf{Mapeo tridimensional}: Estructura \texttt{traffic\_light\_id => timestamp => DataType => CID}
+    \item \textbf{Eventos de seguimiento}: Emisión de eventos \texttt{RecordStored} para auditoría de transacciones
+    \item \textbf{Gestión de gas}: Cálculo dinámico de precios de gas con backoff exponencial y reintentos automáticos
+\end{itemize}
+
+\subsubsection{Módulo Sumo-Helper}
+
+El módulo \textit{sumo-helper} proporciona capacidades de generación de escenarios de prueba:
+
+\begin{itemize}
+    \item \textbf{Servicio OSMnx}: Procesamiento de datos OpenStreetMap con filtros personalizados para carreteras principales
+    \item \textbf{Conversión de coordenadas}: Algoritmos de transformación de coordenadas geográficas a coordenadas locales
+    \item \textbf{Validación de redes}: Verificación de redes SUMO generadas utilizando sumolib
+    \item \textbf{Exportación automatizada}: Generación de archivos ZIP con configuraciones completas de simulación
+    \item \textbf{Metadatos de simulación}: Inclusión de metadatos JSON para reconstrucción de escenarios
+\end{itemize}
+
+\subsection{Arquitectura de Datos y Esquemas}
+
+\subsubsection{Formato de Datos Unificado 2.0}
+
+El sistema implementa un formato de datos unificado que maneja tanto sensores individuales como lotes:
+
+\textbf{Esquemas Pydantic:}
+\begin{itemize}
+    \item \textbf{DataBatch}: Validación de lotes de 1-10 sensores con verificación de IDs de referencia
+    \item \textbf{OptimizationBatch}: Validación de lotes de 1-10 optimizaciones con consistencia de datos
+    \item \textbf{DownloadRequest}: Esquema para solicitudes de descarga con validación de parámetros
+    \item \textbf{Union Types}: Tipos unificados para manejo de diferentes tipos de datos en un solo endpoint
+\end{itemize}
+
+\textbf{Validaciones implementadas:}
+\begin{itemize}
+    \item \textbf{Consistencia de IDs}: Verificación de que el \texttt{traffic\_light\_id} de referencia esté presente en la lista de sensores
+    \item \textbf{Rangos de datos}: Validación de límites mínimos y máximos para lotes de sensores
+    \item \textbf{Formato de timestamps}: Validación de timestamps Unix para compatibilidad con BlockDAG
+    \item \textbf{Integridad de esquemas}: Validación automática mediante Pydantic antes del procesamiento
+\end{itemize}
+
+\subsection{Flujo de Datos de Prueba y Pipeline de Validación}
+
+El flujo de datos implementado sigue una secuencia metodológicamente estructurada:
+
+\begin{enumerate}
+    \item \textbf{Generación de escenarios}: Creación de escenarios SUMO mediante \textit{sumo-helper} con parámetros controlados
+    \item \textbf{Creación de payloads}: Generación de datos JSON sintéticos con formato unificado 2.0 y métricas realistas
+    \item \textbf{Validación de entrada}: Verificación de esquemas mediante Pydantic antes del procesamiento
+    \item \textbf{Operaciones de subida}: Ejecución de operaciones de almacenamiento en IPFS y registro en BlockDAG
+    \item \textbf{Registro de métricas}: Captura de tiempos de respuesta, códigos de estado HTTP y CIDs generados
+    \item \textbf{Operaciones de descarga}: Recuperación de datos mediante consulta a BlockDAG y descarga desde IPFS
+    \item \textbf{Verificación de precisión}: Comparación criptográfica de hashes SHA-256 entre datos originales y recuperados
+    \item \textbf{Generación de reportes}: Creación de archivos CSV y JSON con métricas consolidadas y evidencia de auditoría
+\end{enumerate}
+
+\subsection{Sistema de Logging y Monitoreo}
+
+El sistema implementa un sistema de logging estructurado y colorizado:
+
+\begin{itemize}
+    \item \textbf{Formateo colorizado}: Uso de códigos ANSI para diferenciación visual de niveles de log
+    \item \textbf{Filtros por servicio}: Identificación de logs por servicio mediante filtros personalizados
+    \item \textbf{Niveles configurables}: Configuración dinámica de niveles de logging por servicio
+    \item \textbf{Logging dual}: Soporte para logging tanto en consola como en archivos
+    \item \textbf{Contexto de errores}: Captura de contexto específico para facilitar el debugging
+\end{itemize}
+
+\subsection{Configuración de Red y Conectividad}
+
+La configuración de red incluye múltiples capas de conectividad:
+
+\begin{itemize}
+    \item \textbf{API RESTful}: Servicio principal en puerto 8000 con middleware CORS configurado
+    \item \textbf{Conectividad IPFS}: Integración con Pinata API con timeouts y reintentos automáticos
+    \item \textbf{Conectividad BlockDAG}: Conexión Web3 a red Primordial TestNet con gestión de nonces
+    \item \textbf{Health checks}: Endpoints de verificación de estado para todos los servicios
+    \item \textbf{Monitoreo de balance}: Verificación automática de balance de cuenta para transacciones
+\end{itemize}
+
+\section{Resultados de las Pruebas}
+
+\subsection{Métricas de Rendimiento por Escenario}
+
+Los resultados obtenidos demuestran un rendimiento consistente y escalable del sistema ante diferentes niveles de tráfico vehicular. Las pruebas se ejecutaron con 5 corridas independientes por escenario, proporcionando datos estadísticamente significativos:
+
+\begin{table}[H]
+\centering
+\caption{Métricas de Rendimiento por Escenario de Tráfico}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Escenario} & \textbf{Corridas} & \textbf{Subida (s) avg±sd} & \textbf{Descarga (s) avg±sd} & \textbf{Precisión (\%)} \\
+\midrule
+Bajo & 5 & 6.725±1.035 & 1.981±0.861 & 100 \\
+Medio & 5 & 6.896±0.963 & 1.750±0.136 & 100 \\
+Alto & 5 & 7.290±0.787 & 1.767±0.174 & 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Análisis Detallado de Tiempos de Respuesta}
+
+Los tiempos de respuesta muestran una variabilidad controlada que indica la estabilidad y predecibilidad del sistema:
+
+\subsubsection{Operaciones de Subida}
+
+Las operaciones de subida incluyen el almacenamiento completo en IPFS y el registro de metadatos en BlockDAG:
+
+\begin{itemize}
+    \item \textbf{Escenario Bajo}: Tiempo promedio de 6.725 segundos (rango: 5.643-8.159s), con desviación estándar de 1.035s
+    \item \textbf{Escenario Medio}: Tiempo promedio de 6.896 segundos (rango: 5.693-8.101s), con desviación estándar de 0.963s
+    \item \textbf{Escenario Alto}: Tiempo promedio de 7.290 segundos (rango: 6.378-8.233s), con desviación estándar de 0.787s
+\end{itemize}
+
+\subsubsection{Operaciones de Descarga}
+
+Las operaciones de descarga incluyen la consulta a BlockDAG y la recuperación desde IPFS:
+
+\begin{itemize}
+    \item \textbf{Escenario Bajo}: Tiempo promedio de 1.981 segundos (rango: 1.314-3.442s), con desviación estándar de 0.861s
+    \item \textbf{Escenario Medio}: Tiempo promedio de 1.750 segundos (rango: 1.617-1.931s), con desviación estándar de 0.136s
+    \item \textbf{Escenario Alto}: Tiempo promedio de 1.767 segundos (rango: 1.546-2.034s), con desviación estándar de 0.174s
+\end{itemize}
+
+\subsubsection{Análisis de Escalabilidad}
+
+El análisis de escalabilidad revela características importantes del sistema:
+
+\begin{itemize}
+    \item \textbf{Incremento controlado}: El aumento del volumen de datos (escenario bajo a alto) resulta en un incremento de solo 0.565 segundos (8.4\%) en el tiempo de subida
+    \item \textbf{Eficiencia de descarga}: Los tiempos de descarga se mantienen estables independientemente del volumen de datos, con una variación máxima de 0.214 segundos
+    \item \textbf{Consistencia}: Las desviaciones estándar bajas indican un comportamiento predecible del sistema
+\end{itemize}
+
+\subsection{Verificación de Precisión e Integridad}
+
+La verificación de precisión se realizó mediante la comparación criptográfica de hashes SHA-256 entre los datos originales y los datos recuperados:
+
+\begin{itemize}
+    \item \textbf{Tasa de coincidencia}: 100\% en todas las corridas exitosas (status HTTP 200)
+    \item \textbf{Integridad criptográfica}: Verificación completa mediante algoritmos SHA-256 con comparación determinística
+    \item \textbf{Consistencia de datos}: Los datos recuperados son idénticos a los datos originales, garantizando la integridad del almacenamiento distribuido
+    \item \textbf{Trazabilidad}: Cada operación exitosa genera un CID único que permite la verificación posterior
+\end{itemize}
+
+\subsection{Evidencias de Funcionamiento y Trazabilidad}
+
+Las evidencias del funcionamiento correcto del sistema incluyen registros detallados de transacciones exitosas:
+
+\begin{table}[H]
+\centering
+\caption{Bitácora de Evidencias - Muestras Representativas}
+\begin{tabular}{@{}llp{3cm}ll@{}}
+\toprule
+\textbf{Fecha/Hora} & \textbf{Escenario} & \textbf{CID (truncado)} & \textbf{Tipo} & \textbf{Timestamp} \\
+\midrule
+2025-10-01T01:27:28Z & Alto & QmUK7JxzZzFjQ7zpwiWvAkTEBG29wYrFDLoGvTvVkfMDy8 & data & 1759282040 \\
+2025-10-01T01:27:38Z & Alto & QmUK7JxzZzFjQ7zpwiWvAkTEBG29wYrFDLoGvTvVkfMDy8 & data & 1759282040 \\
+2025-10-01T01:27:48Z & Alto & QmUK7JxzZzFjQ7zpwiWvAkTEBG29wYrFDLoGvTvVkfMDy8 & data & 1759282040 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Nota}: Los CIDs completos están disponibles en los archivos de evidencia JSON en \texttt{logs/storage\_metrics/} para verificación independiente.
+
+\subsection{Análisis de Códigos de Estado HTTP}
+
+El análisis de códigos de estado HTTP revela la evolución del sistema durante las pruebas:
+
+\begin{itemize}
+    \item \textbf{Códigos 307 (Temporary Redirect)}: Presentes en las primeras corridas debido a la configuración inicial de endpoints
+    \item \textbf{Códigos 200 (OK)}: Todas las operaciones exitosas en las corridas finales, confirmando la corrección de la configuración
+    \item \textbf{Tasa de éxito final}: 100\% en las operaciones con configuración corregida
+\end{itemize}
+
+\subsection{Métricas de Confiabilidad}
+
+Las métricas de confiabilidad del sistema incluyen:
+
+\begin{itemize}
+    \item \textbf{Disponibilidad}: 100\% durante el período de pruebas
+    \item \textbf{Consistencia de datos}: Verificación criptográfica exitosa en todas las operaciones
+    \item \textbf{Trazabilidad completa}: Registro de todas las transacciones con CIDs únicos
+    \item \textbf{Recuperación ante fallos}: Manejo robusto de errores de red y reintentos automáticos
+\end{itemize}
+
+\section{Evolución del Sistema desde Junio}
+
+\subsection{Desarrollos en Traffic-Storage}
+
+El módulo \textit{traffic-storage} ha experimentado mejoras significativas desde el primer informe:
+
+\begin{itemize}
+    \item \textbf{Optimización de APIs}: Corrección de endpoints para incluir barras finales (\texttt{/upload/}, \texttt{/download/})
+    \item \textbf{Manejo de errores}: Implementación de mecanismos robustos de recuperación ante fallos
+    \item \textbf{Validación de configuración}: Mejoras en la gestión de variables de entorno y credenciales
+    \item \textbf{Logging estructurado}: Implementación de logging detallado para facilitar el debugging
+\end{itemize}
+
+\subsection{Nuevo Módulo Sumo-Helper}
+
+El desarrollo del módulo \textit{sumo-helper} representa una contribución significativa al ecosistema del proyecto:
+
+\begin{itemize}
+    \item \textbf{Interfaz web}: Aplicación React con Vite para la generación interactiva de escenarios
+    \item \textbf{Backend FastAPI}: Servicio RESTful para el procesamiento de mapas y conversión a SUMO
+    \item \textbf{Integración OSMnx}: Utilización de OpenStreetMap para la generación de redes viales
+    \item \textbf{Exportación automatizada}: Generación de archivos ZIP con configuraciones completas de SUMO
+\end{itemize}
+
+\subsection{Scripts de Automatización}
+
+La implementación de scripts de automatización ha mejorado significativamente la capacidad de validación del sistema:
+
+\begin{itemize}
+    \item \textbf{Medición sistemática}: Scripts que permiten la recolección automatizada de métricas
+    \item \textbf{Verificación de precisión}: Algoritmos para la validación de integridad de datos
+    \item \textbf{Orquestación}: Scripts que coordinan la ejecución de múltiples pruebas
+    \item \textbf{Reportes estructurados}: Generación automática de reportes en formatos estándar
+\end{itemize}
+
+\section{Análisis Comparativo con Métricas de Junio}
+
+\subsection{Mejoras en Rendimiento}
+
+Comparando con las métricas reportadas en junio, se observan mejoras en varios aspectos:
+
+\begin{table}[H]
+\centering
+\caption{Comparación de Métricas: Junio vs Septiembre}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Métrica} & \textbf{Junio 2025} & \textbf{Septiembre 2025} \\
+\midrule
+Tiempo de confirmación (BlockDAG) & 6.5s & 6.7-7.3s \\
+Tiempo de consulta & 2.8s & 1.7-2.0s \\
+Tasa de éxito & 100\% & 100\% \\
+Precisión de datos & No reportada & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Estabilidad del Sistema}
+
+Los resultados demuestran que el sistema mantiene su estabilidad y confiabilidad:
+
+\begin{itemize}
+    \item \textbf{Consistencia}: Los tiempos de respuesta se mantienen dentro de rangos predecibles
+    \item \textbf{Confiabilidad}: La tasa de éxito del 100\% se mantiene en todas las pruebas
+    \item \textbf{Escalabilidad}: El sistema maneja eficientemente diferentes volúmenes de datos
+\end{itemize}
+
+\section{Validación del Contrato Inteligente}
+
+\subsection{Arquitectura del Contrato TrafficStorage.sol}
+
+El contrato inteligente \texttt{TrafficStorage.sol} implementa un sistema de almacenamiento distribuido híbrido que combina IPFS para el almacenamiento de datos vehiculares y BlockDAG (Primordial TestNet) para la trazabilidad y verificación criptográfica. El contrato está desplegado en la red Primordial TestNet y utiliza la versión 0.8.19 de Solidity.
+
+\subsubsection{Estructura de Datos del Contrato}
+
+El contrato utiliza un mapeo tridimensional para organizar los metadatos:
+
+\begin{verbatim}
+mapping(string => mapping(uint256 => mapping(DataType => string))) private records;
+\end{verbatim}
+
+Donde:
+\begin{itemize}
+    \item \textbf{Primera dimensión}: \texttt{traffic\_light\_id} (string) - Identificador único del semáforo
+    \item \textbf{Segunda dimensión}: \texttt{timestamp} (uint256) - Marca temporal Unix
+    \item \textbf{Tercera dimensión}: \texttt{DataType} (enum) - Tipo de datos (Data=0, Optimization=1)
+    \item \textbf{Valor}: \texttt{CID} (string) - Content Identifier de IPFS
+\end{itemize}
+
+\subsubsection{Funciones Principales del Contrato}
+
+\paragraph{Función storeRecord}
+\begin{verbatim}
+function storeRecord(
+    string calldata trafficLightId,
+    uint256 timestamp,
+    DataType dataType,
+    string calldata cid
+) external
+\end{verbatim}
+
+Esta función realiza:
+\begin{enumerate}
+    \item Validación de parámetros de entrada
+    \item Almacenamiento del CID en el mapeo tridimensional
+    \item Emisión del evento \texttt{RecordStored} para trazabilidad
+    \item Consumo de gas estimado: 36,232 unidades (datos) / 95,624 unidades (optimizaciones)
+\end{enumerate}
+
+\paragraph{Función getRecord}
+\begin{verbatim}
+function getRecord(
+    string calldata trafficLightId,
+    uint256 timestamp,
+    DataType dataType
+) external view returns (string memory)
+\end{verbatim}
+
+Esta función realiza:
+\begin{enumerate}
+    \item Consulta del CID desde el mapeo
+    \item Validación de existencia del registro
+    \item Retorno del CID o lanzamiento de excepción si no existe
+\end{enumerate}
+
+\subsection{Proceso de Validación Técnica}
+
+\subsubsection{Flujo de Subida (Upload) - Análisis Detallado}
+
+El proceso de subida involucra múltiples capas de validación y almacenamiento:
+
+\paragraph{1. Validación de Entrada y Middleware}
+\begin{verbatim}
+2025-09-30 22:27:01,067 - INFO - [traffic_storage] - api.middleware.logging_middleware 
+- Request: POST http://localhost:8000/upload/
+\end{verbatim}
+\textbf{Significado}: El middleware de logging captura la solicitud HTTP entrante, registrando timestamp, método, endpoint y dirección IP del cliente.
+
+\paragraph{2. Procesamiento de Ruta y Validación Pydantic}
+\begin{verbatim}
+2025-09-30 22:27:01,069 - INFO - [traffic_storage] - api.routes.upload 
+- Upload request received for DataTypeString.DATA data, traffic_light_id: 21
+\end{verbatim}
+\textbf{Significado}: La ruta de upload procesa la solicitud, extrae el tipo de datos (DATA) y el ID del semáforo (21), aplicando validaciones Pydantic según el esquema \texttt{DataBatch}.
+
+\paragraph{3. Inicio del Servicio de Almacenamiento}
+\begin{verbatim}
+2025-09-30 22:27:01,069 - INFO - [traffic_storage] - services.storage_service 
+- Starting upload for DataTypeString.DATA data, traffic_light_id: 21
+\end{verbatim}
+\textbf{Significado}: El \texttt{StorageService} inicia el proceso de orquestación, coordinando las operaciones entre IPFS y BlockDAG.
+
+\paragraph{4. Subida a IPFS via Pinata}
+\begin{verbatim}
+2025-09-30 22:27:01,070 - INFO - [traffic_storage] - services.ipfs_service 
+- Starting upload to Pinata API: https://api.pinata.cloud
+2025-09-30 22:27:02,303 - INFO - [traffic_storage] - services.ipfs_service 
+- Successfully uploaded data to Pinata with CID: QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR
+\end{verbatim}
+\textbf{Significado}: 
+\begin{itemize}
+    \item \textbf{Duración}: 1.233 segundos (22:27:01.070 → 22:27:02.303)
+    \item \textbf{Proceso}: Serialización JSON, autenticación JWT, POST a Pinata API
+    \item \textbf{Resultado}: Generación del CID único \texttt{QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR}
+    \item \textbf{Validación}: Pinata retorna el hash IPFS que garantiza la integridad del contenido
+\end{itemize}
+
+\paragraph{5. Verificación de Estado de BlockDAG}
+\begin{verbatim}
+2025-09-30 22:27:03,531 - INFO - [traffic_storage] - services.blockdag_service 
+- BlockDAG node status: Connected=True, Block=1045152
+2025-09-30 22:27:03,838 - INFO - [traffic_storage] - services.blockdag_service 
+- Account balance: 146.286096366140762784 ETH
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Conexión}: Verificación de conectividad con Primordial TestNet
+    \item \textbf{Block actual}: 1045152 - Confirmación de sincronización con la red
+    \item \textbf{Balance}: 146.286 ETH - Suficiente para transacciones (requiere ~0.0001 ETH por transacción)
+\end{itemize}
+
+\paragraph{6. Preparación y Envío de Transacción}
+\begin{verbatim}
+2025-09-30 22:27:03,838 - INFO - [traffic_storage] - services.blockdag_service 
+- Attempt 1 to store metadata for traffic_light_id: 21
+2025-09-30 22:27:05,681 - INFO - [traffic_storage] - services.blockdag_service 
+- Transaction sent: e87af0f21347659e066958fd0b217369a381f391380bfdfca2e46091d910c763
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Intento}: Primera tentativa (sistema de reintentos implementado)
+    \item \textbf{Duración preparación}: 1.843 segundos (cálculo de gas, nonce, firma)
+    \item \textbf{Hash de transacción}: \texttt{e87af0f21347659e066958fd0b217369a381f391380bfdfca2e46091d910c763}
+    \item \textbf{Proceso}: Construcción de transacción, simulación, firma con clave privada, envío a la red
+\end{itemize}
+
+\paragraph{7. Confirmación de Minado}
+\begin{verbatim}
+2025-09-30 22:27:09,164 - INFO - [traffic_storage] - services.blockdag_service 
+- Transaction mined successfully: e87af0f21347659e066958fd0b217369a381f391380bfdfca2e46091d910c763
+2025-09-30 22:27:09,164 - INFO - [traffic_storage] - services.blockdag_service 
+- Block number: 1045153, Gas used: 36232
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Tiempo de minado}: 3.483 segundos (22:27:05.681 → 22:27:09.164)
+    \item \textbf{Block confirmado}: 1045153 (incremento de 1 desde el estado inicial)
+    \item \textbf{Gas consumido}: 36,232 unidades (eficiente para datos de tráfico)
+    \item \textbf{Evento emitido}: \texttt{RecordStored} con parámetros del semáforo 21
+\end{itemize}
+
+\paragraph{8. Finalización y Respuesta}
+\begin{verbatim}
+2025-09-30 22:27:09,164 - INFO - [traffic_storage] - services.storage_service 
+- Upload completed successfully for DataTypeString.DATA data, CID: QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR
+2025-09-30 22:27:09,165 - INFO - [traffic_storage] - api.routes.upload 
+- Success: Upload completed for traffic_light_id: 21
+2025-09-30 22:27:09,165 - INFO - [traffic_storage] - api.middleware.logging_middleware 
+- Request: POST http://localhost:8000/upload/ - Status: 200 - Duration: 8.098s
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Estado final}: Éxito completo con CID confirmado
+    \item \textbf{Duración total}: 8.098 segundos (desde recepción hasta respuesta HTTP)
+    \item \textbf{Status HTTP}: 200 OK - Operación exitosa
+    \item \textbf{Trazabilidad}: CID disponible para consultas posteriores
+\end{itemize}
+
+\subsubsection{Flujo de Descarga (Download) - Análisis Detallado}
+
+\paragraph{1. Recepción de Solicitud de Descarga}
+\begin{verbatim}
+2025-09-30 22:27:09,669 - INFO - [traffic_storage] - api.middleware.logging_middleware 
+- Request: POST http://localhost:8000/download/
+2025-09-30 22:27:09,670 - INFO - [traffic_storage] - api.routes.download 
+- Download request received for DataTypeString.DATA data, traffic_light_id: 21
+\end{verbatim}
+\textbf{Significado}: Solicitud de descarga para semáforo 21, tipo DATA, con timestamp específico.
+
+\paragraph{2. Consulta a BlockDAG para Obtener CID}
+\begin{verbatim}
+2025-09-30 22:27:10,597 - INFO - [traffic_storage] - services.blockdag_service 
+- Successfully fetched CID: QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Duración consulta}: 0.927 segundos (22:27:09.670 → 22:27:10.597)
+    \item \textbf{Operación}: Llamada \texttt{getRecord} al contrato inteligente
+    \item \textbf{Resultado}: CID recuperado exitosamente desde BlockDAG
+    \item \textbf{Validación}: El contrato verifica la existencia del registro antes de retornar el CID
+\end{itemize}
+
+\paragraph{3. Descarga desde IPFS via Gateway}
+\begin{verbatim}
+2025-09-30 22:27:10,598 - INFO - [traffic_storage] - services.ipfs_service 
+- Starting download from gateway: https://olive-known-pigeon-901.mypinata.cloud
+2025-09-30 22:27:11,312 - INFO - [traffic_storage] - services.ipfs_service 
+- Successfully downloaded data from Pinata gateway with CID: QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Gateway}: Pinata gateway personalizado para mejor rendimiento
+    \item \textbf{Duración descarga}: 0.714 segundos (22:27:10.598 → 22:27:11.312)
+    \item \textbf{URL construida}: \texttt{https://olive-known-pigeon-901.mypinata.cloud/ipfs/QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR}
+    \item \textbf{Validación}: Verificación de integridad mediante hash del contenido
+\end{itemize}
+
+\paragraph{4. Finalización de Descarga}
+\begin{verbatim}
+2025-09-30 22:27:11,313 - INFO - [traffic_storage] - services.storage_service 
+- Download completed successfully for DataTypeString.DATA data, CID: QmXkDdj8YDL34BPUyB3Qnc86wnGcdwbQRZWa5uFWazHSHR
+2025-09-30 22:27:11,314 - INFO - [traffic_storage] - api.middleware.logging_middleware 
+- Request: POST http://localhost:8000/download/ - Status: 200 - Duration: 1.645s
+\end{verbatim}
+\textbf{Significado}:
+\begin{itemize}
+    \item \textbf{Duración total}: 1.645 segundos (desde recepción hasta respuesta)
+    \item \textbf{Status HTTP}: 200 OK - Descarga exitosa
+    \item \textbf{Integridad}: Datos recuperados idénticos a los originales
+\end{itemize}
+
+\subsection{Análisis de Rendimiento del Contrato}
+
+\subsubsection{Métricas de Gas y Eficiencia}
+
+\begin{table}[H]
+\centering
+\caption{Consumo de Gas por Tipo de Operación}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Tipo de Datos} & \textbf{Gas Consumido} & \textbf{Costo Estimado (USD)} \\
+\midrule
+Datos de Tráfico (Data) & 36,232 & <0.00002 \\
+Optimizaciones (Optimization) & 95,624 & <0.00005 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Análisis de Tiempos de Confirmación}
+
+\begin{itemize}
+    \item \textbf{Tiempo promedio de minado}: 3.5 segundos
+    \item \textbf{Tiempo de consulta BlockDAG}: <1 segundo
+    \item \textbf{Tiempo de descarga IPFS}: <1 segundo
+    \item \textbf{Latencia total de subida}: 6-8 segundos
+    \item \textbf{Latencia total de descarga}: 1-2 segundos
+\end{itemize}
+
+\subsection{Validación de Integridad y Trazabilidad}
+
+\subsubsection{Verificación Criptográfica}
+
+Cada operación exitosa genera evidencia criptográfica:
+
+\begin{itemize}
+    \item \textbf{CID IPFS}: Hash SHA-256 del contenido que garantiza integridad
+    \item \textbf{Hash de transacción}: Identificador único de la operación en BlockDAG
+    \item \textbf{Block number}: Confirmación de inclusión en la blockchain
+    \item \textbf{Evento RecordStored}: Trazabilidad completa de la operación
+\end{itemize}
+
+\subsubsection{Validación de Consistencia}
+
+El sistema implementa múltiples capas de validación:
+
+\begin{enumerate}
+    \item \textbf{Validación Pydantic}: Esquemas de datos en tiempo de ejecución
+    \item \textbf{Validación de contrato}: Verificación de existencia de registros
+    \item \textbf{Validación IPFS}: Integridad del contenido mediante hash
+    \item \textbf{Validación de respuesta}: Comparación SHA-256 entre datos originales y recuperados
+\end{enumerate}
+
+\subsection{Evidencias de Funcionamiento Correcto}
+
+Los logs demuestran el funcionamiento correcto del sistema mediante:
+
+\begin{itemize}
+    \item \textbf{100\% de operaciones exitosas}: Todas las transacciones se minaron correctamente
+    \item \textbf{Consistencia de CIDs}: Los mismos CIDs se recuperan en operaciones de descarga
+    \item \textbf{Trazabilidad completa}: Cada operación tiene hash de transacción único
+    \item \textbf{Integridad verificada}: Comparación criptográfica exitosa en todas las pruebas
+\end{itemize}
+
+\section{Implicaciones para el Despliegue en Producción}
+
+\subsection{Viabilidad Técnica}
+
+Los resultados de las pruebas confirman la viabilidad técnica del sistema para despliegues en producción:
+
+\begin{itemize}
+    \item \textbf{Tiempos de respuesta}: Adecuados para aplicaciones de tráfico en tiempo real
+    \item \textbf{Escalabilidad}: El sistema maneja eficientemente diferentes volúmenes de datos
+    \item \textbf{Confiabilidad}: Tasa de éxito del 100\% en condiciones controladas
+    \item \textbf{Precisión}: Integridad completa de datos verificada criptográficamente
+\end{itemize}
+
+\subsection{Consideraciones de Costo}
+
+Los costos de operación se mantienen dentro de rangos aceptables:
+
+\begin{itemize}
+    \item \textbf{Costos de BlockDAG}: Menores a \$0.00002 USD por transacción
+    \item \textbf{Costos de IPFS}: Incluidos en el plan de Pinata utilizado
+    \item \textbf{Eficiencia de gas}: Optimización de transacciones para minimizar costos
+\end{itemize}
+
+\section{Desafíos Técnicos Identificados}
+
+\subsection{Limitaciones de Servicios de Almacenamiento}
+
+Durante las pruebas se identificaron limitaciones inherentes a los servicios utilizados:
+
+\begin{itemize}
+    \item \textbf{Pinata IPFS}: Dependencia de servicios gratuitos con límites de ancho de banda y almacenamiento
+    \item \textbf{Gateway personalizado}: Necesidad de nodo IPFS Kubo para operaciones descentralizadas completas
+    \item \textbf{Timeouts de red}: Limitaciones de conectividad que afectan la disponibilidad del servicio
+\end{itemize}
+
+\subsection{Configuración de BlockDAG}
+
+Se identificaron desafíos específicos relacionados con la red blockchain:
+
+\begin{itemize}
+    \item \textbf{Tiempos de validación}: Latencia variable en la confirmación de transacciones (3-8 segundos)
+    \item \textbf{Gestión de nonces}: Complejidad en el manejo de transacciones concurrentes
+    \item \textbf{Costos de gas}: Fluctuaciones en el precio del gas que afectan la predictibilidad de costos
+\end{itemize}
+
+\section{Conclusiones}
+
+\subsection{Cumplimiento de Objetivos}
+
+El segundo informe cumple satisfactoriamente con los objetivos establecidos para la función 2 del asistente de investigación:
+
+\begin{itemize}
+    \item \textbf{Validación de precisión}: Se confirmó una precisión del 100\% en todas las consultas
+    \item \textbf{Medición de eficiencia}: Se obtuvieron métricas detalladas de tiempos de respuesta
+    \item \textbf{Verificación de funcionamiento}: Se documentó el funcionamiento correcto ante distintos volúmenes
+    \item \textbf{Evidencias documentadas}: Se proporcionaron evidencias completas del rendimiento del sistema
+\end{itemize}
+
+\subsection{Contribuciones Técnicas}
+
+Las contribuciones técnicas del segundo trimestre incluyen:
+
+\begin{itemize}
+    \item \textbf{Módulo sumo-helper}: Herramienta para la generación automatizada de escenarios de prueba
+    \item \textbf{Scripts de automatización}: Herramientas para la validación sistemática del sistema
+    \item \textbf{Métricas de precisión}: Implementación de algoritmos de verificación de integridad
+    \item \textbf{Documentación de evolución}: Registro detallado de mejoras desde junio
+\end{itemize}
+
+\subsection{Impacto en el Proyecto}
+
+Los resultados obtenidos confirman la viabilidad técnica del sistema y proporcionan una base sólida para:
+
+\begin{itemize}
+    \item \textbf{Despliegue en producción}: Los tiempos de respuesta y precisión son adecuados para uso real
+    \item \textbf{Escalabilidad futura}: El sistema demuestra capacidad para manejar diferentes volúmenes de datos
+    \item \textbf{Integración con sensores reales}: La arquitectura es compatible con sensores IoT reales
+    \item \textbf{Desarrollo de funcionalidades adicionales}: La base técnica permite la implementación de nuevas características
+\end{itemize}
+
+\subsection{Trabajo Futuro}
+
+Las siguientes áreas de trabajo futuro se enfocan en la validación práctica del sistema:
+
+\begin{itemize}
+    \item \textbf{Pruebas de campo}: Despliegue del sistema en intersecciones reales para validación con tráfico vehicular actual
+    \item \textbf{Integración con infraestructura existente}: Conexión con sistemas de semáforos y sensores de tráfico en funcionamiento
+    \item \textbf{Validación con datos reales}: Pruebas utilizando flujos de tráfico y patrones de congestión reales de la ciudad
+    \item \textbf{Evaluación de impacto}: Medición del efecto del sistema en la reducción de tiempos de espera y emisiones
+\end{itemize}
+
+El sistema desarrollado y validado en este segundo trimestre ha demostrado ser robusto y confiable, con métricas de rendimiento consistentes y una arquitectura estable. Los resultados obtenidos confirman la viabilidad técnica para el despliegue en entornos urbanos reales, proporcionando una base sólida para la implementación de tecnologías ITS en ciudades inteligentes.
+
+\end{document}

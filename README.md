@@ -18,6 +18,12 @@ traffic-storage/
 │   ├── config/
 │   │   ├── settings.py
 │   │   └── logging_config.py
+├── tests/
+│   └── integration/
+│       ├── scripts/          # Scripts de automatización para pruebas
+│       ├── logs/             # Logs de ejecución y métricas
+│       ├── reports/          # Reportes LaTeX generados
+│       └── README.md         # Documentación de pruebas
 │   ├── models/
 │   │   ├── schemas.py
 │   │   ├── enums.py
@@ -369,6 +375,21 @@ El formato unificado maneja tanto sensores individuales como lotes de múltiples
 ---
 
 ## Pruebas
+
+### Pruebas de Integración y Benchmarks
+
+Para pruebas automatizadas y benchmarks del sistema, consulta la documentación completa en [`tests/integration/README.md`](tests/integration/README.md).
+
+**Ejecutar pruebas completas:**
+```bash
+cd tests/integration
+./scripts/run_all.sh --runs 5 --storage-url http://localhost:8000
+```
+
+**Verificar precisión:**
+```bash
+python3 scripts/verify_storage_precision.py --scenario alto
+```
 
 ### Pruebas con curl
 ```bash

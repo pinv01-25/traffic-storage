@@ -1,0 +1,34 @@
+{
+  "request": {
+    "version": "2.0",
+    "type": "data",
+    "timestamp": 1759281900,
+    "traffic_light_id": "21",
+    "sensors": [
+      {
+        "traffic_light_id": "21",
+        "controlled_edges": [
+          "edge42",
+          "edge43"
+        ],
+        "metrics": {
+          "vehicles_per_minute": 40,
+          "avg_speed_kmh": 30.0,
+          "avg_circulation_time_sec": 25.0,
+          "density": 0.5
+        },
+        "vehicle_stats": {
+          "motorcycle": 5,
+          "car": 30,
+          "bus": 1,
+          "truck": 2
+        }
+      }
+    ]
+  },
+  "response": {
+    "error": "HTTP Error 307: Temporary Redirect"
+  },
+  "status": 307,
+  "elapsed_s": 0.004710963999968953
+}

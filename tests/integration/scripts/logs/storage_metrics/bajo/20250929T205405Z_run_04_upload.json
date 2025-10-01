@@ -1,0 +1,34 @@
+{
+  "request": {
+    "version": "2.0",
+    "type": "data",
+    "timestamp": 1759179242,
+    "traffic_light_id": "21",
+    "sensors": [
+      {
+        "traffic_light_id": "21",
+        "controlled_edges": [
+          "edge42",
+          "edge43"
+        ],
+        "metrics": {
+          "vehicles_per_minute": 40,
+          "avg_speed_kmh": 30.0,
+          "avg_circulation_time_sec": 25.0,
+          "density": 0.5
+        },
+        "vehicle_stats": {
+          "motorcycle": 5,
+          "car": 30,
+          "bus": 1,
+          "truck": 2
+        }
+      }
+    ]
+  },
+  "response": {
+    "detail": "Not Found"
+  },
+  "status": 404,
+  "elapsed_s": 0.0036728899995068787
+}

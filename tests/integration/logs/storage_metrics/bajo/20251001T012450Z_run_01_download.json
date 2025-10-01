@@ -1,0 +1,12 @@
+{
+  "request": {
+    "traffic_light_id": "21",
+    "timestamp": 1759281890,
+    "type": "data"
+  },
+  "response": {
+    "error": "HTTP Error 307: Temporary Redirect"
+  },
+  "status": 307,
+  "elapsed_s": 0.005031814000062695
+}

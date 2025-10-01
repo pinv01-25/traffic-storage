@@ -1,0 +1,12 @@
+{
+  "request": {
+    "traffic_light_id": "21",
+    "timestamp": 1759179242,
+    "type": "data"
+  },
+  "response": {
+    "detail": "Not Found"
+  },
+  "status": 404,
+  "elapsed_s": 0.0028047449995938223
+}
