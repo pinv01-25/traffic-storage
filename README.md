@@ -49,7 +49,7 @@ traffic-storage/
 │   │   └── __init__.py
 │   └── storage_manager.py
 ├── run.sh
-├── requirements.txt
+├── pyproject.toml
 ├── package.json
 ├── package-lock.json
 ├── env.example
@@ -65,6 +65,7 @@ traffic-storage/
 ### Requisitos previos
 * Node.js ≥ 18
 * Python ≥ 3.10
+* [uv](https://github.com/astral-sh/uv) - Gestor de paquetes Python rápido
 * IPFS daemon ejecutándose
 * Hardhat configurado para BlockDAG
 
@@ -73,8 +74,14 @@ traffic-storage/
 # Dependencias de Node.js
 npm install
 
-# Dependencias de Python
-pip install -r requirements.txt
+# Dependencias de Python con uv
+uv sync
+
+# O instalar solo las dependencias de producción
+uv sync --no-dev
+
+# O instalar con speedups opcionales
+uv sync --extra speedups
 ```
 
 ### Configurar variables de entorno
@@ -517,6 +524,91 @@ curl -X POST http://localhost:8000/download \
 - **Almacenamiento**: Guarda timestamps Unix en el contrato
 - **Conversión**: `traffic-control` maneja la conversión desde ISO a Unix
 - **Salida**: Devuelve timestamps en el formato original almacenado
+
+---
+
+## Desarrollo
+
+### Linting y Formateo con Ruff
+
+Este proyecto usa [Ruff](https://github.com/astral-sh/ruff) para linting y formateo de código.
+
+**Instalar Ruff (si no está instalado):**
+```bash
+uv sync --dev
+```
+
+**Ejecutar linting:**
+```bash
+# Verificar problemas de código
+uv run ruff check .
+
+# Verificar y mostrar problemas
+uv run ruff check . --output-format=concise
+
+# Verificar solo archivos específicos
+uv run ruff check api/
+```
+
+**Corregir automáticamente problemas:**
+```bash
+# Corregir problemas automáticamente cuando sea posible
+uv run ruff check . --fix
+```
+
+**Formatear código:**
+```bash
+# Formatear todos los archivos
+uv run ruff format .
+
+# Verificar formato sin modificar archivos
+uv run ruff format . --check
+
+# Formatear solo archivos específicos
+uv run ruff format api/
+```
+
+**Comandos combinados (recomendado antes de commit):**
+```bash
+# Linting con corrección automática + formateo
+uv run ruff check . --fix && uv run ruff format .
+```
+
+### Gestión de Dependencias con uv
+
+**Agregar una nueva dependencia:**
+```bash
+uv add nombre-paquete
+```
+
+**Agregar una dependencia de desarrollo:**
+```bash
+uv add --dev nombre-paquete
+```
+
+**Agregar una dependencia opcional:**
+```bash
+uv add --extra speedups nombre-paquete
+```
+
+**Actualizar dependencias:**
+```bash
+uv sync --upgrade
+```
+
+**Eliminar una dependencia:**
+```bash
+uv remove nombre-paquete
+```
+
+**Ejecutar comandos en el entorno virtual:**
+```bash
+# Ejecutar cualquier comando Python en el entorno virtual
+uv run python script.py
+
+# Ejecutar el servidor
+uv run python api/run_server.py
+```
 
 ---
 
