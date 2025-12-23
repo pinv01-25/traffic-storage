@@ -42,7 +42,9 @@ def record_csv(path: str, row: list[Any]) -> None:
 
 
 def http_post_json(url: str, payload: Dict[str, Any], timeout: int) -> requests.Response:
-    return requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=timeout)
+    return requests.post(
+        url, json=payload, headers={"Content-Type": "application/json"}, timeout=timeout
+    )
 
 
 def extract_field(container: Dict[str, Any], key: str) -> Optional[Any]:
@@ -74,7 +76,9 @@ def do_upload(base_url: str, payload: Dict[str, Any], timeout: int) -> Dict[str,
     }
 
 
-def do_download(base_url: str, traffic_light_id: str, timestamp: int, data_type: str, timeout: int) -> Dict[str, Any]:
+def do_download(
+    base_url: str, traffic_light_id: str, timestamp: int, data_type: str, timeout: int
+) -> Dict[str, Any]:
     url = base_url.rstrip("/") + "/download"
     body = {
         "traffic_light_id": traffic_light_id,
@@ -105,18 +109,47 @@ def do_download(base_url: str, traffic_light_id: str, timestamp: int, data_type:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Benchmark upload/download to traffic-storage (IPFS + BlockDAG)")
-    parser.add_argument("--storage-url", default=os.environ.get("STORAGE_API_URL", "http://localhost:8000"), help="Base URL of traffic-storage API (default: http://localhost:8000)")
+    parser = argparse.ArgumentParser(
+        description="Benchmark upload/download to traffic-storage (IPFS + BlockDAG)"
+    )
+    parser.add_argument(
+        "--storage-url",
+        default=os.environ.get("STORAGE_API_URL", "http://localhost:8000"),
+        help="Base URL of traffic-storage API (default: http://localhost:8000)",
+    )
     parser.add_argument("--input-json", help="Path to JSON payload to upload (unified 2.0)")
-    parser.add_argument("--runs", type=int, default=5, help="Number of repetitions per mode (default: 5)")
-    parser.add_argument("--timeout", type=int, default=60, help="HTTP timeout seconds (default: 60)")
-    parser.add_argument("--output-csv", default="logs/storage_bench/results.csv", help="Path to CSV output (append)")
-    parser.add_argument("--output-dir", default="logs/storage_bench", help="Directory to store JSON responses")
-    parser.add_argument("--download-after-upload", action="store_true", help="Run download right after each upload using returned identifiers")
-    parser.add_argument("--download-only", action="store_true", help="Skip upload and only run download using explicit identifiers")
-    parser.add_argument("--tl-id", dest="traffic_light_id", help="traffic_light_id for download-only mode")
+    parser.add_argument(
+        "--runs", type=int, default=5, help="Number of repetitions per mode (default: 5)"
+    )
+    parser.add_argument(
+        "--timeout", type=int, default=60, help="HTTP timeout seconds (default: 60)"
+    )
+    parser.add_argument(
+        "--output-csv", default="logs/storage_bench/results.csv", help="Path to CSV output (append)"
+    )
+    parser.add_argument(
+        "--output-dir", default="logs/storage_bench", help="Directory to store JSON responses"
+    )
+    parser.add_argument(
+        "--download-after-upload",
+        action="store_true",
+        help="Run download right after each upload using returned identifiers",
+    )
+    parser.add_argument(
+        "--download-only",
+        action="store_true",
+        help="Skip upload and only run download using explicit identifiers",
+    )
+    parser.add_argument(
+        "--tl-id", dest="traffic_light_id", help="traffic_light_id for download-only mode"
+    )
     parser.add_argument("--timestamp", type=int, help="Unix timestamp for download-only mode")
-    parser.add_argument("--type", dest="data_type", choices=["data", "optimization"], help="Type for download-only mode")
+    parser.add_argument(
+        "--type",
+        dest="data_type",
+        choices=["data", "optimization"],
+        help="Type for download-only mode",
+    )
 
     args = parser.parse_args()
 
@@ -145,9 +178,11 @@ def main() -> int:
             print("--download-only requires --tl-id, --timestamp and --type", file=sys.stderr)
             return 2
         for i in range(args.runs):
-            res = do_download(base_url, args.traffic_light_id, args.timestamp, args.data_type, args.timeout)
+            res = do_download(
+                base_url, args.traffic_light_id, args.timestamp, args.data_type, args.timeout
+            )
             resp = res["response"] or {}
-            response_path = os.path.join(args.output_dir, f"download_{i+1}.json")
+            response_path = os.path.join(args.output_dir, f"download_{i + 1}.json")
             write_json(response_path, resp if isinstance(resp, dict) else {"raw": str(resp)})
             row = [
                 i + 1,
@@ -177,11 +212,13 @@ def main() -> int:
         # Upload
         up = do_upload(base_url, payload, args.timeout)
         up_resp = up["response"] or {}
-        up_path = os.path.join(args.output_dir, f"upload_{i+1}.json")
+        up_path = os.path.join(args.output_dir, f"upload_{i + 1}.json")
         write_json(up_path, up_resp if isinstance(up_resp, dict) else {"raw": str(up_resp)})
 
         # Best-effort identifiers for download
-        tl_id = extract_field(up_resp, "traffic_light_id") or extract_field(payload, "traffic_light_id")
+        tl_id = extract_field(up_resp, "traffic_light_id") or extract_field(
+            payload, "traffic_light_id"
+        )
         ts = extract_field(up_resp, "timestamp") or extract_field(payload, "timestamp")
         dtype = extract_field(up_resp, "type") or extract_field(payload, "type")
 
@@ -205,7 +242,7 @@ def main() -> int:
         if args.download_after_upload and tl_id and ts and dtype:
             dn = do_download(base_url, str(tl_id), int(ts), str(dtype), args.timeout)
             dn_resp = dn["response"] or {}
-            dn_path = os.path.join(args.output_dir, f"download_after_upload_{i+1}.json")
+            dn_path = os.path.join(args.output_dir, f"download_after_upload_{i + 1}.json")
             write_json(dn_path, dn_resp if isinstance(dn_resp, dict) else {"raw": str(dn_resp)})
             row_dn = [
                 i + 1,
@@ -229,5 +266,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

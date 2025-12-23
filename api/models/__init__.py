@@ -1,15 +1,15 @@
-from models.schemas import (
+from api.models.enums import DataType
+from api.models.schemas import (
     DataBatch,
-    OptimizationBatch,
     DownloadRequest,
-    UploadModel
+    OptimizationBatch,
+    UploadModel,
 )
-from models.enums import DataType
 
 __all__ = [
     "DataBatch",
-    "OptimizationBatch", 
+    "OptimizationBatch",
     "DownloadRequest",
     "UploadModel",
-    "DataType"
-] 
+    "DataType",
+]

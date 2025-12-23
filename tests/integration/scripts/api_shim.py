@@ -22,10 +22,10 @@ import argparse
 import json
 from typing import Any, Dict
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
-import httpx
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,7 +56,9 @@ def create_app(backend_base: str) -> FastAPI:
                     "west": float(bbox["minLon"]),
                 }
             except Exception:
-                return JSONResponse({"detail": "bbox requires minLat,minLon,maxLat,maxLon"}, status_code=422)
+                return JSONResponse(
+                    {"detail": "bbox requires minLat,minLon,maxLat,maxLon"}, status_code=422
+                )
             if "place_name" in body:
                 new_body["place_name"] = body["place_name"]
         else:
@@ -90,11 +92,23 @@ def create_app(backend_base: str) -> FastAPI:
                 r = await client.get(fwd_url, params=dict(req.query_params), headers=headers)
             else:
                 if data is not None:
-                    r = await client.request(method, fwd_url, json=data, params=dict(req.query_params), headers=headers)
+                    r = await client.request(
+                        method, fwd_url, json=data, params=dict(req.query_params), headers=headers
+                    )
                 else:
-                    r = await client.request(method, fwd_url, content=content, params=dict(req.query_params), headers=headers)
+                    r = await client.request(
+                        method,
+                        fwd_url,
+                        content=content,
+                        params=dict(req.query_params),
+                        headers=headers,
+                    )
 
-        return Response(content=r.content, status_code=r.status_code, headers={"content-type": r.headers.get("content-type", "application/json")})
+        return Response(
+            content=r.content,
+            status_code=r.status_code,
+            headers={"content-type": r.headers.get("content-type", "application/json")},
+        )
 
     return app
 
@@ -108,5 +122,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

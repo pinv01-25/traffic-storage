@@ -32,12 +32,36 @@ from typing import Any, Dict, Optional, Tuple
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Measure traffic-storage upload/download metrics")
-    parser.add_argument("--scenario", required=True, help="Scenario label: bajo | medio | alto | custom")
-    parser.add_argument("--runs", type=int, default=5, help="Number of repetitions per execution (default: 5)")
-    parser.add_argument("--payload", type=str, default="", help="Path to JSON payload file (data format 2.0). If omitted, a synthetic payload is generated")
-    parser.add_argument("--storage-url", type=str, default="http://localhost:8000", help="Base URL of traffic-storage API")
-    parser.add_argument("--sleep-between", type=float, default=0.5, help="Seconds to sleep between ops to avoid bursts (default: 0.5s)")
-    parser.add_argument("--out-dir", type=str, default="logs/storage_metrics", help="Output directory for CSV and JSON evidence")
+    parser.add_argument(
+        "--scenario", required=True, help="Scenario label: bajo | medio | alto | custom"
+    )
+    parser.add_argument(
+        "--runs", type=int, default=5, help="Number of repetitions per execution (default: 5)"
+    )
+    parser.add_argument(
+        "--payload",
+        type=str,
+        default="",
+        help="Path to JSON payload file (data format 2.0). If omitted, a synthetic payload is generated",
+    )
+    parser.add_argument(
+        "--storage-url",
+        type=str,
+        default="http://localhost:8000",
+        help="Base URL of traffic-storage API",
+    )
+    parser.add_argument(
+        "--sleep-between",
+        type=float,
+        default=0.5,
+        help="Seconds to sleep between ops to avoid bursts (default: 0.5s)",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=str,
+        default="logs/storage_metrics",
+        help="Output directory for CSV and JSON evidence",
+    )
     return parser.parse_args()
 
 
@@ -59,9 +83,13 @@ def write_json_file(path: str, data: Dict[str, Any]) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def http_post_json(url: str, payload: Dict[str, Any], timeout: float = 60.0) -> Tuple[int, Dict[str, Any], float]:
+def http_post_json(
+    url: str, payload: Dict[str, Any], timeout: float = 60.0
+) -> Tuple[int, Dict[str, Any], float]:
     body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    req = urllib.request.Request(
+        url, data=body, headers={"Content-Type": "application/json"}, method="POST"
+    )
     start = time.perf_counter()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -123,19 +151,21 @@ def open_csv_writer(csv_path: str) -> Tuple[csv.writer, Any]:
     f = open(csv_path, "a", newline="", encoding="utf-8")
     writer = csv.writer(f)
     if not exists:
-        writer.writerow([
-            "datetime_utc",
-            "scenario",
-            "run_index",
-            "operation",
-            "elapsed_s",
-            "status",
-            "storage_url",
-            "cid",
-            "traffic_light_id",
-            "timestamp",
-            "type",
-        ])
+        writer.writerow(
+            [
+                "datetime_utc",
+                "scenario",
+                "run_index",
+                "operation",
+                "elapsed_s",
+                "status",
+                "storage_url",
+                "cid",
+                "traffic_light_id",
+                "timestamp",
+                "type",
+            ]
+        )
     return writer, f
 
 
@@ -158,14 +188,17 @@ def main() -> int:
 
         download_req = extract_download_request_from_payload(payload)
         if download_req is None:
-            print("[ERROR] Payload missing required fields for download request (traffic_light_id, timestamp)", file=sys.stderr)
+            print(
+                "[ERROR] Payload missing required fields for download request (traffic_light_id, timestamp)",
+                file=sys.stderr,
+            )
             return 2
 
         upload_url = args.storage_url.rstrip("/") + "/upload/"
         download_url = args.storage_url.rstrip("/") + "/download/"
 
         for i in range(args.runs):
-            run_tag = f"run_{i+1:02d}"
+            run_tag = f"run_{i + 1:02d}"
             stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
             # Upload
@@ -173,21 +206,31 @@ def main() -> int:
             cid = resp_u.get("cid") if isinstance(resp_u, dict) else None
 
             up_json_path = os.path.join(scenario_dir, f"{stamp}_{run_tag}_upload.json")
-            write_json_file(up_json_path, {"request": payload, "response": resp_u, "status": status_u, "elapsed_s": elapsed_u})
+            write_json_file(
+                up_json_path,
+                {
+                    "request": payload,
+                    "response": resp_u,
+                    "status": status_u,
+                    "elapsed_s": elapsed_u,
+                },
+            )
 
-            writer.writerow([
-                now_iso(),
-                args.scenario,
-                i + 1,
-                "upload",
-                f"{elapsed_u:.6f}",
-                status_u,
-                args.storage_url,
-                cid or "",
-                payload.get("traffic_light_id", ""),
-                payload.get("timestamp", ""),
-                payload.get("type", ""),
-            ])
+            writer.writerow(
+                [
+                    now_iso(),
+                    args.scenario,
+                    i + 1,
+                    "upload",
+                    f"{elapsed_u:.6f}",
+                    status_u,
+                    args.storage_url,
+                    cid or "",
+                    payload.get("traffic_light_id", ""),
+                    payload.get("timestamp", ""),
+                    payload.get("type", ""),
+                ]
+            )
             csv_file.flush()
 
             time.sleep(args.sleep_between)
@@ -196,21 +239,31 @@ def main() -> int:
             status_d, resp_d, elapsed_d = http_post_json(download_url, download_req)
 
             down_json_path = os.path.join(scenario_dir, f"{stamp}_{run_tag}_download.json")
-            write_json_file(down_json_path, {"request": download_req, "response": resp_d, "status": status_d, "elapsed_s": elapsed_d})
+            write_json_file(
+                down_json_path,
+                {
+                    "request": download_req,
+                    "response": resp_d,
+                    "status": status_d,
+                    "elapsed_s": elapsed_d,
+                },
+            )
 
-            writer.writerow([
-                now_iso(),
-                args.scenario,
-                i + 1,
-                "download",
-                f"{elapsed_d:.6f}",
-                status_d,
-                args.storage_url,
-                cid or resp_d.get("cid", "") if isinstance(resp_d, dict) else "",
-                download_req.get("traffic_light_id", ""),
-                download_req.get("timestamp", ""),
-                download_req.get("type", ""),
-            ])
+            writer.writerow(
+                [
+                    now_iso(),
+                    args.scenario,
+                    i + 1,
+                    "download",
+                    f"{elapsed_d:.6f}",
+                    status_d,
+                    args.storage_url,
+                    cid or resp_d.get("cid", "") if isinstance(resp_d, dict) else "",
+                    download_req.get("traffic_light_id", ""),
+                    download_req.get("timestamp", ""),
+                    download_req.get("type", ""),
+                ]
+            )
             csv_file.flush()
 
             time.sleep(args.sleep_between)
@@ -226,5 +279,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

@@ -23,9 +23,19 @@ from typing import Any, Dict, List, Tuple
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Verify storage precision for a given scenario")
-    parser.add_argument("--scenario", required=True, help="Scenario label: bajo | medio | alto | custom")
-    parser.add_argument("--base-dir", default="logs/storage_metrics", help="Base directory where metrics logs were stored")
-    parser.add_argument("--out-file", default="", help="Optional explicit output CSV path; defaults to <base-dir>/precision_<scenario>.csv")
+    parser.add_argument(
+        "--scenario", required=True, help="Scenario label: bajo | medio | alto | custom"
+    )
+    parser.add_argument(
+        "--base-dir",
+        default="logs/storage_metrics",
+        help="Base directory where metrics logs were stored",
+    )
+    parser.add_argument(
+        "--out-file",
+        default="",
+        help="Optional explicit output CSV path; defaults to <base-dir>/precision_<scenario>.csv",
+    )
     return parser.parse_args()
 
 
@@ -51,7 +61,9 @@ def find_run_pairs(scenario_dir: str) -> List[Tuple[str, str]]:
     return pairs
 
 
-def compare_round_trip(upload_json: Dict[str, Any], download_json: Dict[str, Any]) -> Tuple[bool, str, str]:
+def compare_round_trip(
+    upload_json: Dict[str, Any], download_json: Dict[str, Any]
+) -> Tuple[bool, str, str]:
     # upload stored as { request: <payload>, response: ..., ... }
     # download stored as { request: {...}, response: <payload>, ... }
     up_payload = upload_json.get("request")
@@ -68,18 +80,20 @@ def open_csv_writer(path: str):
     f = open(path, "a", newline="", encoding="utf-8")
     writer = csv.writer(f)
     if not exists:
-        writer.writerow([
-            "scenario",
-            "stamp_run",
-            "precision_equal",
-            "upload_sha256",
-            "download_sha256",
-            "upload_status",
-            "download_status",
-            "upload_elapsed_s",
-            "download_elapsed_s",
-            "cid",
-        ])
+        writer.writerow(
+            [
+                "scenario",
+                "stamp_run",
+                "precision_equal",
+                "upload_sha256",
+                "download_sha256",
+                "upload_status",
+                "download_status",
+                "upload_elapsed_s",
+                "download_elapsed_s",
+                "cid",
+            ]
+        )
     return writer, f
 
 
@@ -113,22 +127,26 @@ def main() -> int:
             except Exception:
                 cid = ""
 
-            writer.writerow([
-                args.scenario,
-                stamp_run,
-                int(is_equal),
-                up_hash,
-                down_hash,
-                up.get("status", ""),
-                down.get("status", ""),
-                up.get("elapsed_s", ""),
-                down.get("elapsed_s", ""),
-                cid,
-            ])
+            writer.writerow(
+                [
+                    args.scenario,
+                    stamp_run,
+                    int(is_equal),
+                    up_hash,
+                    down_hash,
+                    up.get("status", ""),
+                    down.get("status", ""),
+                    up.get("elapsed_s", ""),
+                    down.get("elapsed_s", ""),
+                    cid,
+                ]
+            )
 
         f.flush()
         pct = (equal / total * 100.0) if total else 0.0
-        print(f"Scenario: {args.scenario} | pairs: {total} | exact matches: {equal} ({pct:.2f}%)\nCSV: {out_file}")
+        print(
+            f"Scenario: {args.scenario} | pairs: {total} | exact matches: {equal} ({pct:.2f}%)\nCSV: {out_file}"
+        )
         return 0
     finally:
         try:
@@ -139,5 +157,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
