@@ -6,7 +6,7 @@ const config: HardhatUserConfig = {
   solidity: "0.8.19",
   networks: {
     blockdag: {
-      url: "https://rpc.primordial.bdagscan.com",
+      url: "https://relay.awakening.bdagscan.com/",
       accounts: [process.env.PRIVATE_KEY!],
       chainId: 1043,
     },

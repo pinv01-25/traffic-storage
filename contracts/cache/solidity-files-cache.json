@@ -1,9 +1,9 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/home/majin/Documents/traffic-storage/contracts/contracts/TrafficStorage.sol": {
-      "lastModificationDate": 1745688293534,
-      "contentHash": "89e860cee3dbb79985b5fcab09374111",
+    "C:\\Users\\kevin\\tfg\\traffic-storage\\contracts\\contracts\\TrafficStorage.sol": {
+      "lastModificationDate": 1766498443778,
+      "contentHash": "df6e466045421f0ec82cecb2e5ceb029",
       "sourceName": "contracts/TrafficStorage.sol",
       "solcConfig": {
         "version": "0.8.19",

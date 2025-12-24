@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # BlockDAG Configuration
     # Support both old format (RPC_URL, PRIVATE_KEY, CHAIN_ID) and new format
     BLOCKDAG_RPC_URL: str = Field(
-        default="https://rpc.primordial.bdagscan.com",
+        default="https://relay.awakening.bdagscan.com/",
         alias="RPC_URL",
         validation_alias="RPC_URL",
     )

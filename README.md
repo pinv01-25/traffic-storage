@@ -95,10 +95,77 @@ PINATA_JWT=your_pinata_jwt_token_here
 PINATA_URL=https://your-gateway.mypinata.cloud
 
 # === BLOCKCHAIN CONFIGURATION ===
-RPC_URL=https://rpc.primordial.bdagscan.com
+RPC_URL=https://relay.awakening.bdagscan.com/
 PRIVATE_KEY=0x_your_private_key_here
 CHAIN_ID=1043
 ```
+
+### Desplegar el contrato inteligente
+
+Antes de usar el servicio, necesitas desplegar el contrato `TrafficStorage` en la red BlockDAG (Primordial TestNet).
+
+#### Prerrequisitos para el despliegue
+
+1. **Clave privada con fondos**: Necesitas una clave privada de una wallet que tenga fondos en BlockDAG para pagar el gas del despliegue.
+2. **Node.js instalado**: Asegúrate de tener Node.js ≥ 18 instalado.
+
+#### Pasos para desplegar
+
+1. **Navegar al directorio de contratos**:
+```bash
+cd contracts
+```
+
+2. **Instalar dependencias** (si no están instaladas):
+```bash
+npm install
+```
+
+3. **Configurar la clave privada**:
+   - Crea un archivo `.env` en el directorio `contracts/` (o usa el `.env` del directorio raíz)
+   - Añade tu clave privada:
+```bash
+PRIVATE_KEY=0x_your_private_key_here
+```
+   ⚠️ **IMPORTANTE**: Nunca compartas tu clave privada. Asegúrate de que el archivo `.env` esté en `.gitignore`.
+
+4. **Compilar el contrato**:
+```bash
+npx hardhat compile
+```
+
+5. **Desplegar el contrato a BlockDAG**:
+```bash
+npx hardhat run scripts/deploy.ts --network blockdag
+```
+
+6. **Guardar la dirección del contrato**:
+   - El script mostrará la dirección del contrato desplegado, por ejemplo:
+   ```
+   TrafficStorage deployed at address: 0x1234567890123456789012345678901234567890
+   ```
+   - Copia esta dirección y actualiza tu archivo `.env` en el directorio raíz:
+```bash
+BLOCKDAG_CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
+```
+
+#### Verificar el despliegue
+
+Puedes verificar que el contrato está desplegado correctamente usando el health check del servicio:
+
+```bash
+curl http://localhost:8000/healthcheck
+```
+
+O verificando directamente en el explorador de BlockDAG:
+- Visita: https://bdagscan.com
+- Busca la dirección del contrato desplegado
+
+#### Solución de problemas
+
+- **Error: "insufficient funds"**: Asegúrate de que la wallet tenga suficientes fondos para pagar el gas.
+- **Error: "nonce too low"**: Espera unos segundos y vuelve a intentar.
+- **Error: "network mismatch"**: Verifica que `CHAIN_ID=1043` en tu configuración.
 
 ### Ejecutar el sistema completo
 ```
