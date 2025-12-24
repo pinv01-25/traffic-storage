@@ -1,8 +1,7 @@
 from typing import List, Literal
 
-from pydantic import BaseModel, Field, model_validator
-
 from api.models.enums import DataTypeString, DataVersion
+from pydantic import BaseModel, Field, model_validator
 
 
 class DataBatch(BaseModel):

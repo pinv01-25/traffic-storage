@@ -4,9 +4,8 @@ from typing import Any, Dict
 
 from config.logging_config import get_logger
 from config.settings import settings
-from web3 import Web3
-
 from modules.utils import BlockDAGError
+from web3 import Web3
 
 logger = get_logger(__name__, service_name="traffic_storage")
 

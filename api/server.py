@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict
 
 import uvicorn
+from api.models.schemas import DownloadRequest, UploadModel
 from config.logging_config import log_error, log_success, setup_logging
 from config.settings import settings
 from fastapi import FastAPI, HTTPException
@@ -16,8 +17,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from modules.services.storage import StorageService
 from modules.utils import DownloadError, UploadError, ValidationError
-
-from api.models.schemas import DownloadRequest, UploadModel
 
 # Setup unified logging
 logger = setup_logging("traffic_storage", level=settings.LOG_LEVEL)
